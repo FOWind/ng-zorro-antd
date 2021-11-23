@@ -17,6 +17,7 @@ import { NzEmptyModule } from 'ng-zorro-antd/empty';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzInputModule } from 'ng-zorro-antd/input';
 
+import { NzCascaderOptionBuiltinCheckboxComponent } from './cascader-li-checkbox.component';
 import { NzCascaderOptionComponent } from './cascader-li.component';
 import { NzCascaderComponent } from './cascader.component';
 
@@ -34,7 +35,7 @@ import { NzCascaderComponent } from './cascader.component';
     NzNoAnimationModule,
     NzOverlayModule
   ],
-  declarations: [NzCascaderComponent, NzCascaderOptionComponent],
+  declarations: [NzCascaderComponent, NzCascaderOptionComponent, NzCascaderOptionBuiltinCheckboxComponent],
   exports: [NzCascaderComponent]
 })
 export class NzCascaderModule {}

@@ -159,6 +159,7 @@ const defaultDisplayRender = (labels: string[]): string => labels.join(' / ');
             <li
               nz-cascader-option
               *ngFor="let option of options"
+              [nzCheckable]="nzCheckable"
               [expandIcon]="nzExpandIcon"
               [columnIndex]="i"
               [nzLabelProperty]="nzLabelProperty"
@@ -217,6 +218,8 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
   @Input() @InputBoolean() nzAutoFocus = false;
   @Input() @InputBoolean() nzChangeOnSelect = false;
   @Input() @InputBoolean() nzDisabled = false;
+  @Input() @InputBoolean() nzMultiple: boolean = false;
+  @Input() @InputBoolean() nzCheckable: boolean = false;
   @Input() nzColumnClassName?: string;
   @Input() nzExpandTrigger: NzCascaderExpandTrigger = 'click';
   @Input() nzValueProperty = 'value';

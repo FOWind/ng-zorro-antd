@@ -31,6 +31,11 @@ import { NzCascaderOption } from './typings';
       ></ng-template>
     </ng-container>
     <ng-template #defaultOptionTemplate>
+      <nz-cascader-option-checkbox
+        builtin
+        [isChecked]="true"
+        [nzSelectMode]="nzCheckable"
+      ></nz-cascader-option-checkbox>
       <span [innerHTML]="optionLabel | nzHighlight: highlightText:'g':'ant-cascader-menu-item-keyword'"></span>
     </ng-template>
     <span
@@ -49,7 +54,8 @@ import { NzCascaderOption } from './typings';
     '[attr.title]': 'option.title || optionLabel',
     '[class.ant-cascader-menu-item-active]': 'activated',
     '[class.ant-cascader-menu-item-expand]': '!option.isLeaf',
-    '[class.ant-cascader-menu-item-disabled]': 'option.disabled'
+    '[class.ant-cascader-menu-item-disabled]': 'option.disabled',
+    '[class.ant-cascader-menu-item-checkable]': 'nzCheckable'
   }
 })
 export class NzCascaderOptionComponent implements OnInit {
@@ -61,6 +67,7 @@ export class NzCascaderOptionComponent implements OnInit {
   @Input() columnIndex!: number;
   @Input() expandIcon: string | TemplateRef<void> = '';
   @Input() dir: Direction = 'ltr';
+  @Input() nzCheckable: boolean = false;
 
   readonly nativeElement: HTMLElement;
 
@@ -79,7 +86,6 @@ export class NzCascaderOptionComponent implements OnInit {
   get optionLabel(): string {
     return this.option[this.nzLabelProperty];
   }
-
   markForCheck(): void {
     this.cdr.markForCheck();
   }
