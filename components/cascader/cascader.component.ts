@@ -624,9 +624,14 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
     if (event) {
       event.preventDefault();
     }
-    this.inSearchingMode
-      ? this.cascaderService.setSearchOptionSelected(option as NzCascaderSearchOption)
-      : this.cascaderService.setOptionActivated(option, columnIndex, true, true);
+    if (this.cascaderService.checkedOptionsKeySet.has(option.value)) {
+      this.cascaderService.removeSelectedOption(option, columnIndex, this.nzMultiple);
+      this.cascaderService.checkedOptionsKeySet.delete(option.value);
+    } else {
+      this.inSearchingMode
+        ? this.cascaderService.setSearchOptionSelected(option as NzCascaderSearchOption)
+        : this.cascaderService.setOptionActivated(option, columnIndex, true, true);
+    }
   }
 
   onClickOutside(event: MouseEvent): void {

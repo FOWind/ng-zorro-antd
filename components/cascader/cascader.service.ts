@@ -209,11 +209,16 @@ export class NzCascaderService implements OnDestroy {
     const shouldPerformSelection = (o: NzCascaderOption, i: number): boolean =>
       typeof changeOn === 'function' ? changeOn(o, i) : false;
 
-    if (option.isLeaf || this.cascaderComponent.nzChangeOnSelect || shouldPerformSelection(option, index)) {
+    if (
+      (option.isLeaf || this.cascaderComponent.nzChangeOnSelect || shouldPerformSelection(option, index)) &&
+      !this.hasOptionSelected(option.value, multiple)
+    ) {
       if (!multiple) {
         this.selectedOptions = [...this.activatedOptions];
       } else {
         this.selectedOptions = [...this.selectedOptions, [...this.activatedOptions]];
+        this.checkedOptionsKeySet.add(option.value);
+        this.conduct(option);
       }
       this.prepareEmitValue(multiple);
       this.$redraw.next();
@@ -244,6 +249,25 @@ export class NzCascaderService implements OnDestroy {
       return this.selectedOptions.some(o => JSON.stringify(o.value) === JSON.stringify(value));
     }
     return false;
+  }
+
+  /**
+   * Remove item from selectedOptions
+   *
+   * @param value
+   * @param multipleMode
+   */
+  removeSelectedOption(option: NzCascaderOption, index: number, multipleMode: boolean = false): void {
+    if (this.isMultipleSelections(this.selectedOptions, multipleMode)) {
+      this.selectedOptions = this.selectedOptions.filter(
+        innerOptions => !innerOptions.some(o => JSON.stringify(o.value) === JSON.stringify(option.value))
+      );
+      this.checkedOptionsKeySet.delete(option.value);
+      this.conduct(option);
+      this.prepareEmitValue(multipleMode);
+      this.$redraw.next();
+      this.$optionSelected.next({ option, index: index });
+    }
   }
 
   /**
@@ -361,6 +385,8 @@ export class NzCascaderService implements OnDestroy {
   clear(): void {
     this.values = [];
     this.selectedOptions = [];
+    this.checkedOptionsKeySet.clear();
+    this.halfCheckedOptionsKeySet.clear();
     this.activatedOptions = [];
     this.dropBehindColumns(0);
     this.$redraw.next();
@@ -495,11 +521,11 @@ export class NzCascaderService implements OnDestroy {
   }
 
   // reset other node checked state based current node
-  conduct(node: NzCascaderOption, isCheckStrictly: boolean = false): void {
-    const isChecked = node.isChecked;
-    if (node && !isCheckStrictly) {
-      this.conductUp(node);
-      this.conductDown(node, isChecked);
+  conduct(option: NzCascaderOption, isCheckStrictly: boolean = false): void {
+    const isChecked = this.checkedOptionsKeySet.has(option.value);
+    if (option && !isCheckStrictly) {
+      this.conductUp(option);
+      this.conductDown(option, isChecked);
     }
   }
 
@@ -508,11 +534,17 @@ export class NzCascaderService implements OnDestroy {
    * 2、children all checked, parent checked
    * 3、no children checked
    */
-  conductUp(node: NzCascaderOption): void {
-    const parentNode = node.parent;
+  conductUp(option: NzCascaderOption): void {
+    const parentNode = option.parent;
     if (parentNode) {
       if (!parentNode.disabled) {
-        if (parentNode?.children?.every(child => child.disabled || (!child.isHalfChecked && child.isChecked))) {
+        if (
+          parentNode?.children?.every(
+            child =>
+              child.disabled ||
+              (!this.halfCheckedOptionsKeySet.has(child.value) && this.checkedOptionsKeySet.has(child.value))
+          )
+        ) {
           this.checkedOptionsKeySet.add(parentNode.value);
           this.halfCheckedOptionsKeySet.delete(parentNode.value);
         } else if (
@@ -534,11 +566,11 @@ export class NzCascaderService implements OnDestroy {
   /**
    * reset child check state
    */
-  conductDown(node: NzCascaderOption, value: boolean): void {
-    if (!node.disabled) {
-      this.checkedOptionsKeySet.add(node.value);
-      this.halfCheckedOptionsKeySet.delete(node.value);
-      node?.children?.forEach(n => {
+  conductDown(option: NzCascaderOption, value: boolean): void {
+    if (!option.disabled) {
+      this.checkedOptionsKeySet.add(option.value);
+      this.halfCheckedOptionsKeySet.delete(option.value);
+      option?.children?.forEach(n => {
         this.conductDown(n, value);
       });
     }

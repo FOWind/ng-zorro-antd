@@ -18,6 +18,7 @@ import {
   ViewEncapsulation
 } from '@angular/core';
 
+import { NzCascaderService } from './cascader.service';
 import { NzCascaderOption } from './typings';
 
 @Component({
@@ -37,6 +38,8 @@ import { NzCascaderOption } from './typings';
         builtin
         [isDisabled]="option.disabled"
         [nzSelectMode]="nzCheckable"
+        [isChecked]="cascaderService.checkedOptionsKeySet.has(option.value)"
+        [isHalfChecked]="cascaderService.halfCheckedOptionsKeySet.has(option.value)"
         (click)="clickCheckbox($event)"
       ></nz-cascader-option-checkbox>
       <span [innerHTML]="optionLabel | nzHighlight: highlightText:'g':'ant-cascader-menu-item-keyword'"></span>
@@ -75,7 +78,12 @@ export class NzCascaderOptionComponent implements OnInit {
 
   readonly nativeElement: HTMLElement;
 
-  constructor(private cdr: ChangeDetectorRef, elementRef: ElementRef, renderer: Renderer2) {
+  constructor(
+    private cdr: ChangeDetectorRef,
+    elementRef: ElementRef,
+    renderer: Renderer2,
+    public cascaderService: NzCascaderService
+  ) {
     renderer.addClass(elementRef.nativeElement, 'ant-cascader-menu-item');
     this.nativeElement = elementRef.nativeElement;
   }
