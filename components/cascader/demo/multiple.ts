@@ -45,54 +45,16 @@ const options = [
   }
 ];
 
-const otherOptions = [
-  {
-    value: 'fujian',
-    label: 'Fujian',
-    children: [
-      {
-        value: 'xiamen',
-        label: 'Xiamen',
-        children: [
-          {
-            value: 'Kulangsu',
-            label: 'Kulangsu',
-            isLeaf: true
-          }
-        ]
-      }
-    ]
-  },
-  {
-    value: 'guangxi',
-    label: 'Guangxi',
-    children: [
-      {
-        value: 'guilin',
-        label: 'Guilin',
-        children: [
-          {
-            value: 'Lijiang',
-            label: 'Li Jiang River',
-            isLeaf: true
-          }
-        ]
-      }
-    ]
-  }
-];
-
 @Component({
   selector: 'nz-demo-cascader-multiple',
   template: `
     <nz-cascader
       [nzOptions]="nzOptions"
       [(ngModel)]="values"
+      [nzMultiple]="true"
       [nzShowSearch]="true"
       (ngModelChange)="onChanges($event)"
     ></nz-cascader>
-    &nbsp;
-    <a href="javascript:;" (click)="changeNzOptions()" class="change-options">Change Options</a>
   `,
   styles: [
     `
@@ -112,14 +74,6 @@ export class NzDemoCascaderMultipleComponent implements OnInit {
     setTimeout(() => {
       this.nzOptions = options;
     }, 100);
-  }
-
-  changeNzOptions(): void {
-    if (this.nzOptions === options) {
-      this.nzOptions = otherOptions;
-    } else {
-      this.nzOptions = options;
-    }
   }
 
   onChanges(values: string[]): void {

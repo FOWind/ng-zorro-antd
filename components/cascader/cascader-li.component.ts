@@ -9,8 +9,10 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  EventEmitter,
   Input,
   OnInit,
+  Output,
   Renderer2,
   TemplateRef,
   ViewEncapsulation
@@ -33,8 +35,9 @@ import { NzCascaderOption } from './typings';
     <ng-template #defaultOptionTemplate>
       <nz-cascader-option-checkbox
         builtin
-        [isChecked]="true"
+        [isDisabled]="option.disabled"
         [nzSelectMode]="nzCheckable"
+        (click)="clickCheckbox($event)"
       ></nz-cascader-option-checkbox>
       <span [innerHTML]="optionLabel | nzHighlight: highlightText:'g':'ant-cascader-menu-item-keyword'"></span>
     </ng-template>
@@ -68,6 +71,7 @@ export class NzCascaderOptionComponent implements OnInit {
   @Input() expandIcon: string | TemplateRef<void> = '';
   @Input() dir: Direction = 'ltr';
   @Input() nzCheckable: boolean = false;
+  @Output() readonly nzCheckboxChange = new EventEmitter<MouseEvent>();
 
   readonly nativeElement: HTMLElement;
 
@@ -86,6 +90,20 @@ export class NzCascaderOptionComponent implements OnInit {
   get optionLabel(): string {
     return this.option[this.nzLabelProperty];
   }
+
+  /**
+   * check node
+   *
+   * @param event
+   */
+  clickCheckbox(event: MouseEvent): void {
+    event.preventDefault();
+    if (this.option.disabled) {
+      return;
+    }
+    this.nzCheckboxChange.emit(event);
+  }
+
   markForCheck(): void {
     this.cdr.markForCheck();
   }

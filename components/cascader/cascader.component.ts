@@ -159,7 +159,7 @@ const defaultDisplayRender = (labels: string[]): string => labels.join(' / ');
             <li
               nz-cascader-option
               *ngFor="let option of options"
-              [nzCheckable]="nzCheckable"
+              [nzCheckable]="nzMultiple"
               [expandIcon]="nzExpandIcon"
               [columnIndex]="i"
               [nzLabelProperty]="nzLabelProperty"
@@ -171,6 +171,7 @@ const defaultDisplayRender = (labels: string[]): string => labels.join(' / ');
               (mouseenter)="onOptionMouseEnter(option, i, $event)"
               (mouseleave)="onOptionMouseLeave(option, i, $event)"
               (click)="onOptionClick(option, i, $event)"
+              (nzCheckboxChange)="onOptionCheck(option, i, $event)"
             ></li>
           </ul>
         </ng-template>
@@ -219,7 +220,6 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
   @Input() @InputBoolean() nzChangeOnSelect = false;
   @Input() @InputBoolean() nzDisabled = false;
   @Input() @InputBoolean() nzMultiple: boolean = false;
-  @Input() @InputBoolean() nzCheckable: boolean = false;
   @Input() nzColumnClassName?: string;
   @Input() nzExpandTrigger: NzCascaderExpandTrigger = 'click';
   @Input() nzValueProperty = 'value';
@@ -349,7 +349,7 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
     srv.$redraw.pipe(takeUntil(this.destroy$)).subscribe(() => {
       // These operations would not mutate data.
       this.checkChildren();
-      this.setDisplayLabel();
+      this.nzMultiple ? this.setMultipleDisplayLabel() : this.setDisplayLabel();
       this.reposition();
       this.setDropdownStyles();
 
@@ -367,7 +367,8 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
         this.nzSelectionChange.emit([]);
       } else {
         const { option, index } = data;
-        const shouldClose = option.isLeaf || (this.nzChangeOnSelect && this.nzExpandTrigger === 'hover');
+        const shouldClose =
+          (option.isLeaf || (this.nzChangeOnSelect && this.nzExpandTrigger === 'hover')) && !this.nzMultiple;
         if (shouldClose) {
           this.delaySetMenuVisible(false);
         }
@@ -616,7 +617,16 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
     this.el.focus();
     this.inSearchingMode
       ? this.cascaderService.setSearchOptionSelected(option as NzCascaderSearchOption)
-      : this.cascaderService.setOptionActivated(option, columnIndex, true);
+      : this.cascaderService.setOptionActivated(option, columnIndex, !this.nzMultiple);
+  }
+
+  onOptionCheck(option: NzCascaderOption, columnIndex: number, event: Event): void {
+    if (event) {
+      event.preventDefault();
+    }
+    this.inSearchingMode
+      ? this.cascaderService.setSearchOptionSelected(option as NzCascaderSearchOption)
+      : this.cascaderService.setOptionActivated(option, columnIndex, true, true);
   }
 
   onClickOutside(event: MouseEvent): void {
@@ -758,6 +768,18 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
       this.labelRenderContext = { labels, selectedOptions };
     } else {
       this.labelRenderText = defaultDisplayRender.call(this, labels);
+    }
+  }
+
+  private setMultipleDisplayLabel(): void {
+    const selectedOptions = this.cascaderService.selectedOptions;
+    if (this.cascaderService.isMultipleSelections(selectedOptions, this.nzMultiple)) {
+      const labels = selectedOptions.map(options => options.map(o => this.cascaderService.getOptionLabel(o)));
+      if (this.isLabelRenderTemplate) {
+        this.labelRenderContext = { labels, selectedOptions };
+      } else {
+        this.labelRenderText = labels.map(inLabels => inLabels[inLabels.length - 1]).join(',');
+      }
     }
   }
 

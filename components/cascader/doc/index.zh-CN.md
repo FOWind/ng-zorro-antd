@@ -43,6 +43,7 @@ import { NzCascaderModule } from 'ng-zorro-antd/cascader';
 | `[nzLoadData]` | 用于动态加载选项。如果提供了`ngModel`初始值，且未提供`nzOptions`值，则会立即触发动态加载。 | `(option: any, index?: index) => PromiseLike<any>` | - |
 | `[nzMenuClassName]` | 自定义浮层类名 | `string` | - |
 | `[nzMenuStyle]` | 自定义浮层样式 | `object` | - |
+| `[nzMultiple]` | 支持多选 | `boolean` | false |
 | `[nzNotFoundContent]` | 当下拉列表为空时显示的内容 | `string\|TemplateRef<void>` | - |
 | `[nzOptionRender]` | 选项的渲染模板 | `TemplateRef<{ $implicit: NzCascaderOption, index: number }>` | |
 | `[nzOptions]` | 可选项数据源 | `object[]` | - |

@@ -33,7 +33,10 @@ export class NzCascaderService implements OnDestroy {
   inSearchingMode = false;
 
   /** Selected options would be output to user. */
-  selectedOptions: NzCascaderOption[] = [];
+  selectedOptions: Array<NzCascaderOption | NzCascaderOption[]> = [];
+
+  checkedOptionsKeySet: Set<NzSafeAny> = new Set();
+  halfCheckedOptionsKeySet: Set<NzSafeAny> = new Set();
 
   values: NzSafeAny[] = [];
 
@@ -162,12 +165,14 @@ export class NzCascaderService implements OnDestroy {
    * @param option Cascader option
    * @param columnIndex Of which column this option is in
    * @param performSelect Select
+   * @param multiple Multiple Select
    * @param loadingChildren Try to load children asynchronously.
    */
   setOptionActivated(
     option: NzCascaderOption,
     columnIndex: number,
     performSelect: boolean = false,
+    multiple: boolean = false,
     loadingChildren: boolean = true
   ): void {
     if (option.disabled) {
@@ -193,20 +198,24 @@ export class NzCascaderService implements OnDestroy {
 
     // Actually perform selection to make an options not only activated but also selected.
     if (performSelect) {
-      this.setOptionSelected(option, columnIndex);
+      this.setOptionSelected(option, columnIndex, multiple);
     }
 
     this.$redraw.next();
   }
 
-  setOptionSelected(option: NzCascaderOption, index: number): void {
+  setOptionSelected(option: NzCascaderOption, index: number, multiple: boolean = false): void {
     const changeOn = this.cascaderComponent.nzChangeOn;
     const shouldPerformSelection = (o: NzCascaderOption, i: number): boolean =>
       typeof changeOn === 'function' ? changeOn(o, i) : false;
 
     if (option.isLeaf || this.cascaderComponent.nzChangeOnSelect || shouldPerformSelection(option, index)) {
-      this.selectedOptions = [...this.activatedOptions];
-      this.prepareEmitValue();
+      if (!multiple) {
+        this.selectedOptions = [...this.activatedOptions];
+      } else {
+        this.selectedOptions = [...this.selectedOptions, [...this.activatedOptions]];
+      }
+      this.prepareEmitValue(multiple);
       this.$redraw.next();
       this.$optionSelected.next({ option, index });
     }
@@ -216,6 +225,25 @@ export class NzCascaderService implements OnDestroy {
     this.dropBehindActivatedOptions(column - 1);
     this.dropBehindColumns(column);
     this.$redraw.next();
+  }
+
+  /**
+   * Get whether value has selected
+   *
+   * @param value
+   * @param multiMode Set true if multiple select
+   */
+  hasOptionSelected(value: NzSafeAny, multipleMode: boolean = false): boolean {
+    if (this.isMultipleSelections(this.selectedOptions, multipleMode)) {
+      return this.selectedOptions.some(inOptions =>
+        inOptions.some(o => JSON.stringify(o.value) === JSON.stringify(value))
+      );
+    }
+
+    if (this.isSingleSelection(this.selectedOptions, multipleMode)) {
+      return this.selectedOptions.some(o => JSON.stringify(o.value) === JSON.stringify(value));
+    }
+    return false;
   }
 
   /**
@@ -442,7 +470,77 @@ export class NzCascaderService implements OnDestroy {
     return null;
   }
 
-  private prepareEmitValue(): void {
-    this.values = this.selectedOptions.map(o => this.getOptionValue(o));
+  private prepareEmitValue(multiple: boolean = false): void {
+    if (this.isMultipleSelections(this.selectedOptions, multiple)) {
+      this.values = this.selectedOptions.map(options => options.map(o => this.getOptionValue(o)));
+    } else if (this.isSingleSelection(this.selectedOptions)) {
+      this.values = this.selectedOptions.map(o => this.getOptionValue(o));
+    }
+  }
+
+  isMultipleSelections(
+    //@ts-ignore
+    selectedOptions: Array<NzCascaderOption[] | NzCascaderOption>,
+    multiple: boolean = false
+  ): selectedOptions is NzCascaderOption[][] {
+    return multiple;
+  }
+
+  isSingleSelection(
+    //@ts-ignore
+    selectedOptions: Array<NzCascaderOption[] | NzCascaderOption>,
+    multiple: boolean = false
+  ): selectedOptions is NzCascaderOption[] {
+    return !multiple;
+  }
+
+  // reset other node checked state based current node
+  conduct(node: NzCascaderOption, isCheckStrictly: boolean = false): void {
+    const isChecked = node.isChecked;
+    if (node && !isCheckStrictly) {
+      this.conductUp(node);
+      this.conductDown(node, isChecked);
+    }
+  }
+
+  /**
+   * 1、children half checked
+   * 2、children all checked, parent checked
+   * 3、no children checked
+   */
+  conductUp(node: NzCascaderOption): void {
+    const parentNode = node.parent;
+    if (parentNode) {
+      if (!parentNode.disabled) {
+        if (parentNode?.children?.every(child => child.disabled || (!child.isHalfChecked && child.isChecked))) {
+          this.checkedOptionsKeySet.add(parentNode.value);
+          this.halfCheckedOptionsKeySet.delete(parentNode.value);
+        } else if (
+          parentNode?.children?.some(
+            child => this.halfCheckedOptionsKeySet.has(child.value) || this.checkedOptionsKeySet.has(child.value)
+          )
+        ) {
+          this.checkedOptionsKeySet.delete(parentNode.value);
+          this.halfCheckedOptionsKeySet.add(parentNode.value);
+        } else {
+          this.checkedOptionsKeySet.delete(parentNode.value);
+          this.halfCheckedOptionsKeySet.delete(parentNode.value);
+        }
+      }
+      this.conductUp(parentNode);
+    }
+  }
+
+  /**
+   * reset child check state
+   */
+  conductDown(node: NzCascaderOption, value: boolean): void {
+    if (!node.disabled) {
+      this.checkedOptionsKeySet.add(node.value);
+      this.halfCheckedOptionsKeySet.delete(node.value);
+      node?.children?.forEach(n => {
+        this.conductDown(n, value);
+      });
+    }
   }
 }
