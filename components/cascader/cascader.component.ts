@@ -104,12 +104,30 @@ const defaultDisplayRender = (labels: string[]): string => labels.join(' / ');
           [class.ant-cascader-picker-show-search]="!!nzShowSearch"
           [class.ant-cascader-picker-focused]="!!nzShowSearch && isFocused && !inputValue"
         >
-          <ng-container *ngIf="!isLabelRenderTemplate; else labelTemplate">{{ labelRenderText }}</ng-container>
-          <ng-template #labelTemplate>
-            <ng-template
-              [ngTemplateOutlet]="nzLabelRender"
-              [ngTemplateOutletContext]="labelRenderContext"
-            ></ng-template>
+          <ng-container *ngIf="!nzMultiple; else multipleTemplate">
+            <ng-container *ngIf="!isLabelRenderTemplate; else labelTemplate">{{ labelRenderText }}</ng-container>
+            <ng-template #labelTemplate>
+              <ng-template
+                [ngTemplateOutlet]="nzLabelRender"
+                [ngTemplateOutletContext]="labelRenderContext"
+              ></ng-template>
+            </ng-template>
+          </ng-container>
+          <ng-template #multipleTemplate>
+            <ng-container *ngIf="!isLabelRenderTemplate; else labelTemplate">
+              <nz-select-item
+                [deletable]="true"
+                [disabled]="false"
+                *ngFor="let mLabel of labelRenderTextArray"
+                [label]="mLabel"
+              ></nz-select-item>
+            </ng-container>
+            <ng-template #labelTemplate>
+              <ng-template
+                [ngTemplateOutlet]="nzLabelRender"
+                [ngTemplateOutletContext]="labelRenderContext"
+              ></ng-template>
+            </ng-template>
           </ng-template>
         </span>
       </div>
@@ -265,6 +283,8 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
   menuVisible = false;
   isLoading = false;
   labelRenderText?: string;
+  /** For multiple output */
+  labelRenderTextArray?: string[];
   labelRenderContext = {};
   onChange = Function.prototype;
   onTouched = Function.prototype;
@@ -783,7 +803,7 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
       if (this.isLabelRenderTemplate) {
         this.labelRenderContext = { labels, selectedOptions };
       } else {
-        this.labelRenderText = labels.map(inLabels => inLabels[inLabels.length - 1]).join(',');
+        this.labelRenderTextArray = labels.map(inLabels => inLabels.join('/'));
       }
     }
   }

@@ -223,18 +223,15 @@ export class NzCascaderService implements OnDestroy {
       (multiple || this.cascaderComponent.nzChangeOnSelect || shouldPerformSelection(option, index)) &&
       !this.hasOptionSelected(option.value, multiple)
     ) {
-      console.log(multiple, this.activatedOptions);
-      this.selectedOptions = [...this.selectedOptions, [...this.activatedOptions]];
       this.addCheckedOptions(option);
       this.conduct(option);
-      console.log(this.checkedLeafOptionsKeySet);
       this.checkedLeafOptionsKeySet.forEach(leafValue => {
-        console.log(leafValue, this.findAllOptionWithValue(leafValue)!);
+        this.activatedOptions = [];
         this.setAncestorIntoActivatedOptions(this.findAllOptionWithValue(leafValue)!);
         this.selectedOptions = [...this.selectedOptions, [...this.activatedOptions]];
+        console.log(this.selectedOptions);
         this.activatedOptions = [];
       });
-      console.log(this.selectedOptions);
     } else if (option.isLeaf || this.cascaderComponent.nzChangeOnSelect || shouldPerformSelection(option, index)) {
       this.selectedOptions = [...this.activatedOptions];
     }
@@ -642,6 +639,12 @@ export class NzCascaderService implements OnDestroy {
     }
   }
 
+  /**
+   * Load all options to columnsFull
+   * For find option by value purpose
+   *
+   * @returns
+   */
   private loadOptionsToColumnsFull(): void {
     let depth = 0;
     let travelOptions = this.nzOptions && this.nzOptions.length ? this.nzOptions : [];
