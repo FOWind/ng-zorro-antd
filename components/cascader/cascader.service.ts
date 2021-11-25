@@ -37,6 +37,7 @@ export class NzCascaderService implements OnDestroy {
 
   checkedOptionsKeySet: Set<NzSafeAny> = new Set();
   halfCheckedOptionsKeySet: Set<NzSafeAny> = new Set();
+  checkedLeafOptionsKeySet: Set<NzSafeAny> = new Set();
 
   values: NzSafeAny[] = [];
 
@@ -66,6 +67,9 @@ export class NzCascaderService implements OnDestroy {
   /** To hold columns before entering searching mode. */
   private columnsSnapshot: NzCascaderOption[][] = [[]];
 
+  /** To hold columns for full options */
+  private columnsFull: NzCascaderOption[][] = [[]];
+
   /** To hold activated options before entering searching mode. */
   private activatedOptionsSnapshot: NzCascaderOption[] = [];
 
@@ -85,14 +89,16 @@ export class NzCascaderService implements OnDestroy {
 
   /**
    * Make sure that value matches what is displayed in the dropdown.
+   *
+   * If on multiple mode show last selected value
    */
-  syncOptions(first: boolean = false): void {
-    const values = this.values;
+  syncOptions(multiple: boolean = false, first: boolean = false): void {
+    let values = this.values;
     const hasValue = values && values.length;
     const lastColumnIndex = values.length - 1;
-    const initColumnWithIndex = (columnIndex: number): void => {
+    const initColumnWithIndex = (value: NzSafeAny, columnIndex: number, length: number = lastColumnIndex): void => {
       const activatedOptionSetter = (): void => {
-        const currentValue = values[columnIndex];
+        const currentValue = value[columnIndex];
 
         if (!isNotNil(currentValue)) {
           this.$redraw.next();
@@ -100,21 +106,20 @@ export class NzCascaderService implements OnDestroy {
         }
 
         const option =
-          this.findOptionWithValue(columnIndex, values[columnIndex]) ||
+          this.findOptionWithValue(columnIndex, value[columnIndex]) ||
           (typeof currentValue === 'object'
             ? currentValue
             : {
                 [`${this.cascaderComponent.nzValueProperty}`]: currentValue,
                 [`${this.cascaderComponent.nzLabelProperty}`]: currentValue
               });
+        this.setOptionActivated(option, columnIndex, false, multiple, false);
 
-        this.setOptionActivated(option, columnIndex, false, false);
-
-        if (columnIndex < lastColumnIndex) {
-          initColumnWithIndex(columnIndex + 1);
+        if (columnIndex < length) {
+          initColumnWithIndex(value, columnIndex + 1, length);
         } else {
           this.dropBehindColumns(columnIndex);
-          this.selectedOptions = [...this.activatedOptions];
+          this.selectedOptions = [...this.selectedOptions, [...this.activatedOptions]];
           this.$redraw.next();
         }
       };
@@ -135,7 +140,11 @@ export class NzCascaderService implements OnDestroy {
       this.$redraw.next();
       return;
     } else {
-      initColumnWithIndex(0);
+      if (multiple) {
+        values.forEach(value => initColumnWithIndex(value, 0, value.length - 1));
+      } else {
+        initColumnWithIndex(values, 0);
+      }
     }
   }
 
@@ -149,13 +158,15 @@ export class NzCascaderService implements OnDestroy {
   /**
    * Reset all options. Rebuild searching options if in searching mode.
    */
-  withOptions(options: NzCascaderOption[] | null): void {
+  withOptions(options: NzCascaderOption[] | null, multiple: boolean = false): void {
     this.columnsSnapshot = this.columns = options && options.length ? [options] : [];
-
+    if (multiple) {
+      this.loadOptionsToColumnsFull();
+    }
     if (this.inSearchingMode) {
       this.prepareSearchOptions(this.cascaderComponent.inputValue);
     } else if (this.columns.length) {
-      this.syncOptions();
+      this.syncOptions(multiple);
     }
   }
 
@@ -208,22 +219,29 @@ export class NzCascaderService implements OnDestroy {
     const changeOn = this.cascaderComponent.nzChangeOn;
     const shouldPerformSelection = (o: NzCascaderOption, i: number): boolean =>
       typeof changeOn === 'function' ? changeOn(o, i) : false;
-
     if (
-      (option.isLeaf || this.cascaderComponent.nzChangeOnSelect || shouldPerformSelection(option, index)) &&
+      (multiple || this.cascaderComponent.nzChangeOnSelect || shouldPerformSelection(option, index)) &&
       !this.hasOptionSelected(option.value, multiple)
     ) {
-      if (!multiple) {
-        this.selectedOptions = [...this.activatedOptions];
-      } else {
+      console.log(multiple, this.activatedOptions);
+      this.selectedOptions = [...this.selectedOptions, [...this.activatedOptions]];
+      this.addCheckedOptions(option);
+      this.conduct(option);
+      console.log(this.checkedLeafOptionsKeySet);
+      this.checkedLeafOptionsKeySet.forEach(leafValue => {
+        console.log(leafValue, this.findAllOptionWithValue(leafValue)!);
+        this.setAncestorIntoActivatedOptions(this.findAllOptionWithValue(leafValue)!);
         this.selectedOptions = [...this.selectedOptions, [...this.activatedOptions]];
-        this.checkedOptionsKeySet.add(option.value);
-        this.conduct(option);
-      }
-      this.prepareEmitValue(multiple);
-      this.$redraw.next();
-      this.$optionSelected.next({ option, index });
+        this.activatedOptions = [];
+      });
+      console.log(this.selectedOptions);
+    } else if (option.isLeaf || this.cascaderComponent.nzChangeOnSelect || shouldPerformSelection(option, index)) {
+      this.selectedOptions = [...this.activatedOptions];
     }
+
+    this.prepareEmitValue(multiple);
+    this.$redraw.next();
+    this.$optionSelected.next({ option, index });
   }
 
   setOptionDeactivatedSinceColumn(column: number): void {
@@ -262,7 +280,7 @@ export class NzCascaderService implements OnDestroy {
       this.selectedOptions = this.selectedOptions.filter(
         innerOptions => !innerOptions.some(o => JSON.stringify(o.value) === JSON.stringify(option.value))
       );
-      this.checkedOptionsKeySet.delete(option.value);
+      this.removeCheckedOptions(option);
       this.conduct(option);
       this.prepareEmitValue(multipleMode);
       this.$redraw.next();
@@ -361,7 +379,7 @@ export class NzCascaderService implements OnDestroy {
    *
    * @param toSearching If this cascader is entering searching mode
    */
-  toggleSearchingMode(toSearching: boolean): void {
+  toggleSearchingMode(toSearching: boolean, multiple: boolean = false): void {
     this.inSearchingMode = toSearching;
 
     if (toSearching) {
@@ -374,7 +392,7 @@ export class NzCascaderService implements OnDestroy {
       this.activatedOptions = [...this.activatedOptionsSnapshot];
       this.selectedOptions = [...this.activatedOptions];
       this.columns = [...this.columnsSnapshot];
-      this.syncOptions();
+      this.syncOptions(multiple);
       this.$redraw.next();
     }
   }
@@ -424,6 +442,19 @@ export class NzCascaderService implements OnDestroy {
       if (!this.activatedOptions[i]) {
         this.activatedOptions[i] = this.activatedOptions[i + 1].parent!;
       }
+    }
+  }
+
+  /**
+   * Provide a leaf option and then set all ancestor option activated
+   */
+  private setAncestorIntoActivatedOptions(option: NzCascaderOption): void {
+    if (!option) {
+      return;
+    }
+    this.activatedOptions = [option, ...this.activatedOptions];
+    if (option.parent) {
+      this.setAncestorIntoActivatedOptions(option.parent);
     }
   }
 
@@ -485,15 +516,34 @@ export class NzCascaderService implements OnDestroy {
   }
 
   /**
-   * Find a option that has a given value in a given column.
+   * Find an option that has a given value in a given column.
    */
-  private findOptionWithValue(columnIndex: number, value: NzCascaderOption | NzSafeAny): NzCascaderOption | null {
-    const targetColumn = this.columns[columnIndex];
+  private findOptionWithValue(
+    columnIndex: number,
+    value: NzCascaderOption | NzSafeAny,
+    columns: NzCascaderOption[][] = this.columns
+  ): NzCascaderOption | null {
+    const targetColumn = columns[columnIndex];
     if (targetColumn) {
       const v = typeof value === 'object' ? this.getOptionValue(value) : value;
       return targetColumn.find(o => v === this.getOptionValue(o))!;
     }
     return null;
+  }
+
+  /**
+   * Find the first option with given value in all column
+   */
+  private findAllOptionWithValue(value: NzCascaderOption | NzSafeAny): NzCascaderOption | null {
+    let option = null;
+    for (let i = 0; i <= this.columnsSnapshot.length; ++i) {
+      console.log(i, this.columnsSnapshot.length, this.columnsSnapshot);
+      option = this.findOptionWithValue(i, value, this.columnsFull);
+      if (option) {
+        return option;
+      }
+    }
+    return option;
   }
 
   private prepareEmitValue(multiple: boolean = false): void {
@@ -545,17 +595,17 @@ export class NzCascaderService implements OnDestroy {
               (!this.halfCheckedOptionsKeySet.has(child.value) && this.checkedOptionsKeySet.has(child.value))
           )
         ) {
-          this.checkedOptionsKeySet.add(parentNode.value);
+          this.addCheckedOptions(parentNode);
           this.halfCheckedOptionsKeySet.delete(parentNode.value);
         } else if (
           parentNode?.children?.some(
             child => this.halfCheckedOptionsKeySet.has(child.value) || this.checkedOptionsKeySet.has(child.value)
           )
         ) {
-          this.checkedOptionsKeySet.delete(parentNode.value);
+          this.removeCheckedOptions(parentNode);
           this.halfCheckedOptionsKeySet.add(parentNode.value);
         } else {
-          this.checkedOptionsKeySet.delete(parentNode.value);
+          this.removeCheckedOptions(parentNode);
           this.halfCheckedOptionsKeySet.delete(parentNode.value);
         }
       }
@@ -567,12 +617,50 @@ export class NzCascaderService implements OnDestroy {
    * reset child check state
    */
   conductDown(option: NzCascaderOption, value: boolean): void {
-    if (!option.disabled) {
-      this.checkedOptionsKeySet.add(option.value);
+    if (!option.disabled && value) {
+      this.addCheckedOptions(option);
       this.halfCheckedOptionsKeySet.delete(option.value);
-      option?.children?.forEach(n => {
-        this.conductDown(n, value);
+    } else if (!option.disabled && !value) {
+      this.checkedOptionsKeySet.delete(option.value);
+    }
+    option?.children?.forEach(n => {
+      this.conductDown(n, value);
+    });
+  }
+
+  addCheckedOptions(option: NzCascaderOption): void {
+    this.checkedOptionsKeySet.add(option.value);
+    if (option.isLeaf) {
+      this.checkedLeafOptionsKeySet.add(option.value);
+    }
+  }
+
+  removeCheckedOptions(option: NzCascaderOption): void {
+    this.checkedOptionsKeySet.delete(option.value);
+    if (option.isLeaf) {
+      this.checkedLeafOptionsKeySet.delete(option.value);
+    }
+  }
+
+  private loadOptionsToColumnsFull(): void {
+    let depth = 0;
+    let travelOptions = this.nzOptions && this.nzOptions.length ? this.nzOptions : [];
+    let nextDepthTravelOptions: NzCascaderOption[] = [];
+    while (true) {
+      travelOptions.forEach(o => {
+        this.columnsFull[depth] = [...(this.columnsFull[depth] ?? []), o];
+        if (o.children) {
+          nextDepthTravelOptions = [...nextDepthTravelOptions, ...o.children];
+        }
       });
+      if (nextDepthTravelOptions.length) {
+        ++depth;
+        console.log(nextDepthTravelOptions.length, depth);
+        travelOptions = nextDepthTravelOptions;
+        nextDepthTravelOptions = [];
+      } else {
+        return;
+      }
     }
   }
 }

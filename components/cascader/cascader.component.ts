@@ -247,7 +247,7 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
   }
 
   set nzOptions(options: NzCascaderOption[] | null) {
-    this.cascaderService.withOptions(options);
+    this.cascaderService.withOptions(options, this.nzMultiple);
   }
 
   @Output() readonly nzVisibleChange = new EventEmitter<boolean>();
@@ -419,7 +419,7 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
 
   writeValue(value: NzSafeAny): void {
     this.cascaderService.values = toArray(value);
-    this.cascaderService.syncOptions(true);
+    this.cascaderService.syncOptions(this.nzMultiple, true);
   }
 
   delaySetMenuVisible(visible: boolean, delay: number = 100, setOpening: boolean = false): void {
@@ -448,7 +448,7 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
       return;
     }
     if (visible) {
-      this.cascaderService.syncOptions();
+      this.cascaderService.syncOptions(this.nzMultiple);
       this.scrollToActivatedOptions();
     }
 
@@ -711,14 +711,14 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
   private delaySetOptionActivated(option: NzCascaderOption, columnIndex: number, performSelect: boolean): void {
     this.clearDelaySelectTimer();
     this.delaySelectTimer = setTimeout(() => {
-      this.cascaderService.setOptionActivated(option, columnIndex, performSelect);
+      this.cascaderService.setOptionActivated(option, columnIndex, performSelect, this.nzMultiple);
       this.delaySelectTimer = null;
     }, 150);
   }
 
   private toggleSearchingMode(toSearching: boolean): void {
     if (this.inSearchingMode !== toSearching) {
-      this.cascaderService.toggleSearchingMode(toSearching);
+      this.cascaderService.toggleSearchingMode(toSearching, this.nzMultiple);
     }
 
     if (this.inSearchingMode) {

@@ -14,6 +14,17 @@ const options = [
           {
             value: 'xihu',
             label: 'West Lake',
+            children: [
+              {
+                value: 'duanqiao',
+                label: 'Duan Bridge',
+                isLeaf: true
+              }
+            ]
+          },
+          {
+            value: 'lingyinsi',
+            label: 'Lingyin Temple',
             isLeaf: true
           }
         ]
@@ -54,6 +65,7 @@ const options = [
       [nzMultiple]="true"
       [nzShowSearch]="true"
       (ngModelChange)="onChanges($event)"
+      nzExpandTrigger="hover"
     ></nz-cascader>
   `,
   styles: [
