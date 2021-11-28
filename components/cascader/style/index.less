@@ -8,6 +8,7 @@
 .antCheckboxFn(@checkbox-prefix-cls: ~'@{cascader-prefix-cls}-option-checkbox');
 
 .@{cascader-prefix-cls} {
+  width: 200px;
   .reset-component();
 
   &-input.@{ant-prefix}-input {
@@ -21,7 +22,7 @@
     background-color: transparent !important;
     cursor: pointer;
   }
-
+  
   &-picker-show-search &-input.@{ant-prefix}-input {
     position: relative;
   }

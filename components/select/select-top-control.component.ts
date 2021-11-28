@@ -90,6 +90,9 @@ import { NzSelectItemInterface, NzSelectModeType, NzSelectTopControlItemType } f
     <nz-select-placeholder *ngIf="isShowPlaceholder" [placeholder]="placeHolder"></nz-select-placeholder>
   `
 })
+/**
+ * TODO: ant-select-search 导致的宽度大小和原来不统一的问题
+ */
 export class NzSelectTopControlComponent implements OnChanges, OnInit, OnDestroy {
   @Input() nzId: string | null = null;
   @Input() showSearch = false;

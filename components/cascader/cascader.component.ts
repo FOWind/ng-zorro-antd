@@ -52,7 +52,7 @@ import {
 } from './typings';
 
 const NZ_CONFIG_MODULE_NAME: NzConfigKey = 'cascader';
-const defaultDisplayRender = (labels: string[]): string => labels.join(' / ');
+const defaultDisplayRender = (labels: Array<string | undefined>): string => labels.join(' / ');
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -61,8 +61,58 @@ const defaultDisplayRender = (labels: string[]): string => labels.join(' / ');
   exportAs: 'nzCascader',
   preserveWhitespaces: false,
   template: `
-    <div cdkOverlayOrigin #origin="cdkOverlayOrigin" #trigger>
-      <div *ngIf="nzShowInput">
+    <div cdkOverlayOrigin #origin="cdkOverlayOrigin" class="ant-select-selector" #trigger>
+      <ng-container *ngIf="nzMultiple">
+        <nz-select-item
+          *ngFor="let node of cascaderService.selectedOptions | slice: 0:nzMaxTagCount"
+          [deletable]="true"
+          [disabled]="nzDisabled"
+          [label]="nzDisplayWith($any(node))"
+          (delete)="cascaderService.removeSelectedOption(node, 0, true)"
+        ></nz-select-item>
+
+        <nz-select-item
+          *ngIf="cascaderService.selectedOptions.length > nzMaxTagCount"
+          [contentTemplateOutlet]="nzMaxTagPlaceholder"
+          [contentTemplateOutletContext]="cascaderService.selectedOptions | slice: nzMaxTagCount"
+          [deletable]="false"
+          [disabled]="false"
+          [label]="'+ ' + (cascaderService.selectedOptions.length - nzMaxTagCount) + ' ...'"
+        ></nz-select-item>
+      </ng-container>
+
+      <nz-select-search
+        [nzId]="nzId"
+        [showInput]="$any(nzShowSearch)"
+        (keydown)="onKeyDown($event)"
+        (isComposingChange)="isComposing = $event"
+        (valueChange)="setInputValue($event)"
+        [value]="inputValue"
+        [mirrorSync]="nzMultiple"
+        [disabled]="nzDisabled"
+        [focusTrigger]="menuVisible"
+      ></nz-select-search>
+
+      <nz-select-placeholder
+        *ngIf="showPlaceholder"
+        [placeholder]="nzPlaceHolder ?? locale?.placeholder!"
+        [style.display]="placeHolderDisplay"
+      ></nz-select-placeholder>
+
+      <nz-select-item
+        *ngIf="!nzMultiple"
+        [deletable]="false"
+        [disabled]="false"
+        [label]="nzDisplayWith(cascaderService.selectedOptions)"
+      ></nz-select-item>
+
+      <nz-select-arrow *ngIf="!nzMultiple"></nz-select-arrow>
+
+      <nz-select-clear
+        *ngIf="nzAllowClear && !nzDisabled && cascaderService.selectedOptions.length"
+        (clear)="clearSelection($event)"
+      ></nz-select-clear>
+      <div *ngIf="false">
         <input
           #input
           nz-input
@@ -101,6 +151,7 @@ const defaultDisplayRender = (labels: string[]): string => labels.join(' / ');
         <i *ngIf="isLoading" nz-icon nzType="loading" class="ant-cascader-picker-arrow"></i>
         <span
           class="ant-cascader-picker-label"
+          [class.ant-select-selector]="nzMultiple"
           [class.ant-cascader-picker-show-search]="!!nzShowSearch"
           [class.ant-cascader-picker-focused]="!!nzShowSearch && isFocused && !inputValue"
         >
@@ -114,20 +165,9 @@ const defaultDisplayRender = (labels: string[]): string => labels.join(' / ');
             </ng-template>
           </ng-container>
           <ng-template #multipleTemplate>
-            <ng-container *ngIf="!isLabelRenderTemplate; else labelTemplate">
-              <nz-select-item
-                [deletable]="true"
-                [disabled]="false"
-                *ngFor="let mLabel of labelRenderTextArray"
-                [label]="mLabel"
-              ></nz-select-item>
+            <ng-container *ngFor="let mLabel of labelRenderTextArray">
+              <nz-select-item [deletable]="true" [disabled]="false" [label]="mLabel"></nz-select-item>
             </ng-container>
-            <ng-template #labelTemplate>
-              <ng-template
-                [ngTemplateOutlet]="nzLabelRender"
-                [ngTemplateOutletContext]="labelRenderContext"
-              ></ng-template>
-            </ng-template>
           </ng-template>
         </span>
       </div>
@@ -206,14 +246,18 @@ const defaultDisplayRender = (labels: string[]): string => labels.join(' / ');
     NzCascaderService
   ],
   host: {
-    '[attr.tabIndex]': '"0"',
-    '[class.ant-cascader-lg]': 'nzSize === "large"',
-    '[class.ant-cascader-sm]': 'nzSize === "small"',
-    '[class.ant-cascader-picker-disabled]': 'nzDisabled',
-    '[class.ant-cascader-picker-open]': 'menuVisible',
-    '[class.ant-cascader-picker-with-value]': '!!inputValue',
-    '[class.ant-cascader-focused]': 'isFocused',
-    '[class.ant-cascader-picker-rtl]': `dir ==='rtl'`
+    '[class.ant-select-lg]': 'nzSize==="large"',
+    '[class.ant-select-rtl]': 'dir==="rtl"',
+    '[class.ant-select-sm]': 'nzSize==="small"',
+    '[class.ant-select-disabled]': 'nzDisabled',
+    '[class.ant-select-single]': '!nzMultiple',
+    '[class.ant-select-show-arrow]': '!nzMultiple',
+    '[class.ant-select-show-search]': '!nzMultiple',
+    '[class.ant-select-multiple]': 'nzMultiple',
+    '[class.ant-select-allow-clear]': 'nzAllowClear',
+    '[class.ant-select-open]': 'nzOpen',
+    '[class.ant-select-focused]': 'nzOpen || focused',
+    '[attr.tabIndex]': '"0"'
   }
 })
 export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit, OnDestroy, ControlValueAccessor {
@@ -230,6 +274,7 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
   @ViewChild(CdkConnectedOverlay, { static: false }) overlay!: CdkConnectedOverlay;
   @ViewChildren(NzCascaderOptionComponent) cascaderItems!: QueryList<NzCascaderOptionComponent>;
 
+  @Input() nzId: string | null = null;
   @Input() nzOptionRender: TemplateRef<{ $implicit: NzCascaderOption; index: number }> | null = null;
   @Input() @InputBoolean() nzShowInput = true;
   @Input() @InputBoolean() nzShowArrow = true;
@@ -247,7 +292,9 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
   @Input() @WithConfig() nzSize: NzCascaderSize = 'default';
   @Input() @WithConfig() nzBackdrop = false;
   @Input() nzShowSearch: boolean | NzShowSearchOptions = false;
-  @Input() nzPlaceHolder: string = '';
+  @Input() nzPlaceHolder: string | TemplateRef<NzSafeAny> | null = null;
+  @Input() nzMaxTagCount!: number;
+  @Input() nzMaxTagPlaceholder: TemplateRef<{ $implicit: NzCascaderOption[] }> | null = null;
   @Input() nzMenuClassName?: string;
   @Input() nzMenuStyle: NgStyleInterface | null = null;
   @Input() nzMouseEnterDelay: number = 150; // ms
@@ -255,6 +302,9 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
   @Input() nzTriggerAction: NzCascaderTriggerType | NzCascaderTriggerType[] = ['click'] as NzCascaderTriggerType[];
   @Input() nzChangeOn?: (option: NzCascaderOption, level: number) => boolean;
   @Input() nzLoadData?: (node: NzCascaderOption, index: number) => PromiseLike<NzSafeAny>;
+  @Input() nzDisplayWith: (nodes: NzCascaderOption[]) => string | undefined = (nodes: NzCascaderOption[]) => {
+    return defaultDisplayRender(nodes.map(n => n.label)!);
+  };
   // TODO: RTL
   @Input() nzSuffixIcon: string | TemplateRef<void> = 'down';
   @Input() nzExpandIcon: string | TemplateRef<void> = '';
@@ -299,6 +349,7 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
 
   locale!: NzCascaderI18nInterface;
   dir: Direction = 'ltr';
+  isComposing = false;
 
   private destroy$ = new Subject<void>();
   private inputString = '';
@@ -347,6 +398,10 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
     return !!this.nzLabelRender;
   }
 
+  get placeHolderDisplay(): string {
+    return this.inputValue || this.isComposing || this.cascaderService.selectedOptions.length ? 'none' : 'block';
+  }
+
   constructor(
     public cascaderService: NzCascaderService,
     public nzConfigService: NzConfigService,
@@ -359,6 +414,7 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
   ) {
     this.el = elementRef.nativeElement;
     this.cascaderService.withComponent(this);
+    renderer.addClass(elementRef.nativeElement, 'ant-select');
     renderer.addClass(elementRef.nativeElement, 'ant-cascader');
     renderer.addClass(elementRef.nativeElement, 'ant-cascader-picker');
   }
@@ -807,7 +863,9 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
       }
     }
   }
-
+  setInputValue(value: string): void {
+    this.inputValue = value;
+  }
   private setDropdownStyles(): void {
     const firstColumn = this.cascaderService.columns[0];
 

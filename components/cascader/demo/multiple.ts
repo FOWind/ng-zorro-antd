@@ -66,6 +66,7 @@ const options = [
       [nzShowSearch]="true"
       (ngModelChange)="onChanges($event)"
       nzExpandTrigger="hover"
+      style="width: 100%;"
     ></nz-cascader>
   `,
   styles: [
