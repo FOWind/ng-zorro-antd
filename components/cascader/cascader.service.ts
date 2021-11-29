@@ -218,11 +218,7 @@ export class NzCascaderService implements OnDestroy {
     const changeOn = this.cascaderComponent.nzChangeOn;
     const shouldPerformSelection = (o: NzCascaderOption, i: number): boolean =>
       typeof changeOn === 'function' ? changeOn(o, i) : false;
-    if (
-      multiple &&
-      (this.cascaderComponent.nzChangeOnSelect || shouldPerformSelection(option, index)) &&
-      !this.hasOptionSelected(option.value, multiple)
-    ) {
+    if (multiple && !this.hasOptionSelected(option.value, multiple)) {
       this.addCheckedOptions(option);
       this.conduct(option, index);
       this.activatedOptions = [];

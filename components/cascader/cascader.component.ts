@@ -39,6 +39,7 @@ import { BooleanInput, NgClassType, NgStyleInterface, NzSafeAny } from 'ng-zorro
 import { InputBoolean, toArray } from 'ng-zorro-antd/core/util';
 import { NzCascaderI18nInterface, NzI18nService } from 'ng-zorro-antd/i18n';
 
+import { NzCascaderLabelRenderContext } from '.';
 import { NzCascaderOptionComponent } from './cascader-li.component';
 import { NzCascaderService } from './cascader.service';
 import {
@@ -65,11 +66,13 @@ const defaultDisplayRender = (labels: Array<string | undefined>): string => labe
       <div *ngIf="nzShowInput" class="ant-select-selector">
         <ng-container *ngIf="nzMultiple">
           <nz-select-item
-            *ngFor="let node of cascaderService.selectedOptions | slice: 0:nzMaxTagCount"
+            *ngFor="let node of cascaderService.selectedOptions | slice: 0:nzMaxTagCount; index as i"
             [deletable]="true"
             [disabled]="nzDisabled"
             [label]="nzDisplayWith($any(node))"
             (delete)="cascaderService.removeSelectedOption(node, 0, true)"
+            [contentTemplateOutlet]="nzLabelRender"
+            [contentTemplateOutletContext]="labelRenderContext[i]"
           ></nz-select-item>
 
           <nz-select-item
@@ -105,6 +108,8 @@ const defaultDisplayRender = (labels: Array<string | undefined>): string => labe
           [deletable]="false"
           [disabled]="false"
           [label]="nzDisplayWith(cascaderService.selectedOptions)"
+          [contentTemplateOutlet]="nzLabelRender"
+          [contentTemplateOutletContext]="labelRenderContext"
         ></nz-select-item>
 
         <nz-select-arrow *ngIf="!nzMultiple"></nz-select-arrow>
@@ -278,7 +283,7 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
   labelRenderText?: string;
   /** For multiple output */
   labelRenderTextArray?: string[];
-  labelRenderContext = {};
+  labelRenderContext: NzCascaderLabelRenderContext | NzCascaderLabelRenderContext[] | NzSafeAny = {};
   onChange = Function.prototype;
   onTouched = Function.prototype;
   positions: ConnectionPositionPair[] = [...DEFAULT_CASCADER_POSITIONS];
@@ -368,6 +373,7 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
     srv.$redraw.pipe(takeUntil(this.destroy$)).subscribe(() => {
       // These operations would not mutate data.
       this.checkChildren();
+      this.setLabelRenderContext();
       this.reposition();
       this.setDropdownStyles();
 
@@ -815,5 +821,38 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
           e.nativeElement?.scrollIntoView({ block: 'start', inline: 'nearest' });
         });
     });
+  }
+  private isMultiLabel(
+    //@ts-ignore
+    labelRenderContext: NzCascaderLabelRenderContext | NzCascaderLabelRenderContext[]
+  ): labelRenderContext is NzCascaderLabelRenderContext[] {
+    return this.nzMultiple;
+  }
+
+  private isSingleLabel(
+    //@ts-ignore
+    labelRenderContext: NzCascaderLabelRenderContext | NzCascaderLabelRenderContext[]
+  ): labelRenderContext is NzCascaderLabelRenderContext {
+    return !this.nzMultiple;
+  }
+  private setLabelRenderContext(): void {
+    if (
+      this.isMultiLabel(this.labelRenderContext) &&
+      this.cascaderService.isMultipleSelections(this.cascaderService.selectedOptions)
+    ) {
+      this.labelRenderContext = [];
+      this.cascaderService.selectedOptions.forEach(options => {
+        this.labelRenderContext.push({
+          labels: options.map(o => this.cascaderService.getOptionLabel(o)),
+          selectedOPtions: options
+        });
+      });
+    }
+    if (this.isSingleLabel(this.labelRenderContext)) {
+      this.labelRenderContext = {
+        labels: this.cascaderService.selectedOptions.map(o => this.cascaderService.getOptionLabel(o)),
+        selectedOptions: this.cascaderService.selectedOptions
+      };
+    }
   }
 }

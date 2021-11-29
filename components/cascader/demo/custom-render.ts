@@ -69,7 +69,15 @@ const options = [
         </span>
       </ng-container>
     </ng-template>
-  `
+  `,
+
+  styles: [
+    `
+      nz-cascader {
+        width: 100%;
+      }
+    `
+  ]
 })
 export class NzDemoCascaderCustomRenderComponent {
   nzOptions: NzCascaderOption[] = options;

@@ -81,10 +81,7 @@ const options = [
 })
 export class NzDemoCascaderMultipleComponent implements OnInit {
   nzOptions: NzCascaderOption[] | null = null;
-  values: string[] | string[][] | null = [
-    ['zhejiang', 'hangzhou', 'xihu', 'duanqiao'],
-    ['zhejiang', 'hangzhou', 'lingyinsi']
-  ];
+  values: string[] | string[][] | null = null;
 
   ngOnInit(): void {
     setTimeout(() => {
