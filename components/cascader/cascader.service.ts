@@ -119,7 +119,9 @@ export class NzCascaderService implements OnDestroy {
           initColumnWithIndex(value, columnIndex + 1, length);
         } else {
           this.dropBehindColumns(columnIndex);
-          this.selectedOptions = [...this.selectedOptions, [...this.activatedOptions]];
+          multiple
+            ? (this.selectedOptions = [...this.selectedOptions, [...this.activatedOptions]])
+            : (this.selectedOptions = [...this.selectedOptions, ...this.activatedOptions]);
           this.$redraw.next();
         }
       };
@@ -217,7 +219,8 @@ export class NzCascaderService implements OnDestroy {
     const shouldPerformSelection = (o: NzCascaderOption, i: number): boolean =>
       typeof changeOn === 'function' ? changeOn(o, i) : false;
     if (
-      (multiple || this.cascaderComponent.nzChangeOnSelect || shouldPerformSelection(option, index)) &&
+      multiple &&
+      (this.cascaderComponent.nzChangeOnSelect || shouldPerformSelection(option, index)) &&
       !this.hasOptionSelected(option.value, multiple)
     ) {
       this.addCheckedOptions(option);
@@ -435,14 +438,14 @@ export class NzCascaderService implements OnDestroy {
    * @param options Options to insert
    * @param columnIndex Position
    */
-  private setColumnsSnapshotData(options: NzCascaderOption[], columnIndex: number, parent: NzCascaderOption): void {
-    const existingOptions = this.columnsSnapshot[columnIndex];
+  private setColumnsFullData(options: NzCascaderOption[], columnIndex: number, parent: NzCascaderOption): void {
+    const existingOptions = this.columnsFull[columnIndex];
     if (!arraysEqual(existingOptions, options)) {
       options.forEach(o => (o.parent = parent));
-      this.columnsSnapshot[columnIndex] = this.columnsSnapshot[columnIndex] ?? [];
+      this.columnsFull[columnIndex] = this.columnsFull[columnIndex] ?? [];
       for (let option of options) {
-        if (!this.columnsSnapshot[columnIndex].some(o => o.value === option.value)) {
-          this.columnsSnapshot[columnIndex].push(option);
+        if (!this.columnsFull[columnIndex].some(o => o.value === option.value)) {
+          this.columnsFull[columnIndex].push(option);
         }
       }
     }
@@ -550,9 +553,8 @@ export class NzCascaderService implements OnDestroy {
    */
   private findAllOptionWithValue(value: NzCascaderOption | NzSafeAny): NzCascaderOption | null {
     let option = null;
-    for (let i = 0; i <= this.columnsSnapshot.length; ++i) {
-      console.log(i, this.columnsSnapshot.length, this.columnsSnapshot);
-      option = this.findOptionWithValue(i, value, this.columnsSnapshot);
+    for (let i = 0; i <= this.columnsFull.length; ++i) {
+      option = this.findOptionWithValue(i, value, this.columnsFull);
       if (option) {
         return option;
       }
@@ -636,13 +638,14 @@ export class NzCascaderService implements OnDestroy {
    */
   conductDown(option: NzCascaderOption, value: boolean, index: number = 0): void {
     if (isParentOption(option)) {
-      this.setColumnsSnapshotData(option?.children!, index, option);
+      this.setColumnsFullData(option?.children!, index, option);
+      this.setColumnData(option?.children!, index, option);
     }
     if (!option.disabled && value) {
       this.addCheckedOptions(option);
       this.halfCheckedOptionsKeySet.delete(option.value);
     } else if (!option.disabled && !value) {
-      this.checkedOptionsKeySet.delete(option.value);
+      this.removeCheckedOptions(option);
     }
     option?.children?.forEach(n => {
       this.conductDown(n, value, index + 1);
@@ -687,7 +690,6 @@ export class NzCascaderService implements OnDestroy {
       });
       if (nextDepthTravelOptions.length) {
         ++depth;
-        console.log(nextDepthTravelOptions.length, depth);
         travelOptions = nextDepthTravelOptions;
         nextDepthTravelOptions = [];
       } else {

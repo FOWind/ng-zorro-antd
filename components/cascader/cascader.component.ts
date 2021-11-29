@@ -61,115 +61,58 @@ const defaultDisplayRender = (labels: Array<string | undefined>): string => labe
   exportAs: 'nzCascader',
   preserveWhitespaces: false,
   template: `
-    <div cdkOverlayOrigin #origin="cdkOverlayOrigin" class="ant-select-selector" #trigger>
-      <ng-container *ngIf="nzMultiple">
-        <nz-select-item
-          *ngFor="let node of cascaderService.selectedOptions | slice: 0:nzMaxTagCount"
-          [deletable]="true"
+    <div cdkOverlayOrigin #origin="cdkOverlayOrigin" #trigger>
+      <div *ngIf="nzShowInput" class="ant-select-selector">
+        <ng-container *ngIf="nzMultiple">
+          <nz-select-item
+            *ngFor="let node of cascaderService.selectedOptions | slice: 0:nzMaxTagCount"
+            [deletable]="true"
+            [disabled]="nzDisabled"
+            [label]="nzDisplayWith($any(node))"
+            (delete)="cascaderService.removeSelectedOption(node, 0, true)"
+          ></nz-select-item>
+
+          <nz-select-item
+            *ngIf="cascaderService.selectedOptions.length > nzMaxTagCount"
+            [contentTemplateOutlet]="nzMaxTagPlaceholder"
+            [contentTemplateOutletContext]="cascaderService.selectedOptions | slice: nzMaxTagCount"
+            [deletable]="false"
+            [disabled]="false"
+            [label]="'+ ' + (cascaderService.selectedOptions.length - nzMaxTagCount) + ' ...'"
+          ></nz-select-item>
+        </ng-container>
+
+        <nz-select-search
+          [nzId]="nzId"
+          [showInput]="$any(nzShowSearch)"
+          (keydown)="onKeyDown($event)"
+          (isComposingChange)="isComposing = $event"
+          (valueChange)="setInputValue($event)"
+          [value]="inputValue"
+          [mirrorSync]="nzMultiple"
           [disabled]="nzDisabled"
-          [label]="nzDisplayWith($any(node))"
-          (delete)="cascaderService.removeSelectedOption(node, 0, true)"
-        ></nz-select-item>
+          [focusTrigger]="menuVisible"
+        ></nz-select-search>
+
+        <nz-select-placeholder
+          *ngIf="showPlaceholder"
+          [placeholder]="nzPlaceHolder ?? locale?.placeholder!"
+          [style.display]="placeHolderDisplay"
+        ></nz-select-placeholder>
 
         <nz-select-item
-          *ngIf="cascaderService.selectedOptions.length > nzMaxTagCount"
-          [contentTemplateOutlet]="nzMaxTagPlaceholder"
-          [contentTemplateOutletContext]="cascaderService.selectedOptions | slice: nzMaxTagCount"
+          *ngIf="!nzMultiple"
           [deletable]="false"
           [disabled]="false"
-          [label]="'+ ' + (cascaderService.selectedOptions.length - nzMaxTagCount) + ' ...'"
+          [label]="nzDisplayWith(cascaderService.selectedOptions)"
         ></nz-select-item>
-      </ng-container>
 
-      <nz-select-search
-        [nzId]="nzId"
-        [showInput]="$any(nzShowSearch)"
-        (keydown)="onKeyDown($event)"
-        (isComposingChange)="isComposing = $event"
-        (valueChange)="setInputValue($event)"
-        [value]="inputValue"
-        [mirrorSync]="nzMultiple"
-        [disabled]="nzDisabled"
-        [focusTrigger]="menuVisible"
-      ></nz-select-search>
+        <nz-select-arrow *ngIf="!nzMultiple"></nz-select-arrow>
 
-      <nz-select-placeholder
-        *ngIf="showPlaceholder"
-        [placeholder]="nzPlaceHolder ?? locale?.placeholder!"
-        [style.display]="placeHolderDisplay"
-      ></nz-select-placeholder>
-
-      <nz-select-item
-        *ngIf="!nzMultiple"
-        [deletable]="false"
-        [disabled]="false"
-        [label]="nzDisplayWith(cascaderService.selectedOptions)"
-      ></nz-select-item>
-
-      <nz-select-arrow *ngIf="!nzMultiple"></nz-select-arrow>
-
-      <nz-select-clear
-        *ngIf="nzAllowClear && !nzDisabled && cascaderService.selectedOptions.length"
-        (clear)="clearSelection($event)"
-      ></nz-select-clear>
-      <div *ngIf="false">
-        <input
-          #input
-          nz-input
-          class="ant-cascader-input"
-          [class.ant-cascader-input-disabled]="nzDisabled"
-          [class.ant-cascader-input-lg]="nzSize === 'large'"
-          [class.ant-cascader-input-sm]="nzSize === 'small'"
-          [attr.autoComplete]="'off'"
-          [attr.placeholder]="showPlaceholder ? nzPlaceHolder || locale?.placeholder : null"
-          [attr.autofocus]="nzAutoFocus ? 'autofocus' : null"
-          [readonly]="!nzShowSearch"
-          [disabled]="nzDisabled"
-          [nzSize]="nzSize"
-          [(ngModel)]="inputValue"
-          (blur)="handleInputBlur()"
-          (focus)="handleInputFocus()"
-          (change)="$event.stopPropagation()"
-        />
-        <i
-          *ngIf="clearIconVisible"
-          nz-icon
-          nzType="close-circle"
-          nzTheme="fill"
-          class="ant-cascader-picker-clear"
-          (click)="clearSelection($event)"
-        ></i>
-        <ng-container *nzStringTemplateOutlet="nzSuffixIcon">
-          <i
-            *ngIf="nzShowArrow && !isLoading"
-            nz-icon
-            [nzType]="$any(nzSuffixIcon)"
-            class="ant-cascader-picker-arrow"
-            [class.ant-cascader-picker-arrow-expand]="menuVisible"
-          ></i>
-        </ng-container>
-        <i *ngIf="isLoading" nz-icon nzType="loading" class="ant-cascader-picker-arrow"></i>
-        <span
-          class="ant-cascader-picker-label"
-          [class.ant-select-selector]="nzMultiple"
-          [class.ant-cascader-picker-show-search]="!!nzShowSearch"
-          [class.ant-cascader-picker-focused]="!!nzShowSearch && isFocused && !inputValue"
-        >
-          <ng-container *ngIf="!nzMultiple; else multipleTemplate">
-            <ng-container *ngIf="!isLabelRenderTemplate; else labelTemplate">{{ labelRenderText }}</ng-container>
-            <ng-template #labelTemplate>
-              <ng-template
-                [ngTemplateOutlet]="nzLabelRender"
-                [ngTemplateOutletContext]="labelRenderContext"
-              ></ng-template>
-            </ng-template>
-          </ng-container>
-          <ng-template #multipleTemplate>
-            <ng-container *ngFor="let mLabel of labelRenderTextArray">
-              <nz-select-item [deletable]="true" [disabled]="false" [label]="mLabel"></nz-select-item>
-            </ng-container>
-          </ng-template>
-        </span>
+        <nz-select-clear
+          *ngIf="nzAllowClear && !nzDisabled && cascaderService.selectedOptions.length"
+          (clear)="clearSelection($event)"
+        ></nz-select-clear>
       </div>
       <ng-content></ng-content>
     </div>
@@ -303,7 +246,7 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
   @Input() nzChangeOn?: (option: NzCascaderOption, level: number) => boolean;
   @Input() nzLoadData?: (node: NzCascaderOption, index: number) => PromiseLike<NzSafeAny>;
   @Input() nzDisplayWith: (nodes: NzCascaderOption[]) => string | undefined = (nodes: NzCascaderOption[]) => {
-    return defaultDisplayRender(nodes.map(n => n.label)!);
+    return defaultDisplayRender(nodes.map(n => this.cascaderService.getOptionLabel(n!)));
   };
   // TODO: RTL
   @Input() nzSuffixIcon: string | TemplateRef<void> = 'down';
@@ -425,7 +368,6 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
     srv.$redraw.pipe(takeUntil(this.destroy$)).subscribe(() => {
       // These operations would not mutate data.
       this.checkChildren();
-      this.nzMultiple ? this.setMultipleDisplayLabel() : this.setDisplayLabel();
       this.reposition();
       this.setDropdownStyles();
 
@@ -841,28 +783,6 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
     }
   }
 
-  private setDisplayLabel(): void {
-    const selectedOptions = this.cascaderService.selectedOptions;
-    const labels: string[] = selectedOptions.map(o => this.cascaderService.getOptionLabel(o));
-
-    if (this.isLabelRenderTemplate) {
-      this.labelRenderContext = { labels, selectedOptions };
-    } else {
-      this.labelRenderText = defaultDisplayRender.call(this, labels);
-    }
-  }
-
-  private setMultipleDisplayLabel(): void {
-    const selectedOptions = this.cascaderService.selectedOptions;
-    if (this.cascaderService.isMultipleSelections(selectedOptions, this.nzMultiple)) {
-      const labels = selectedOptions.map(options => options.map(o => this.cascaderService.getOptionLabel(o)));
-      if (this.isLabelRenderTemplate) {
-        this.labelRenderContext = { labels, selectedOptions };
-      } else {
-        this.labelRenderTextArray = labels.map(inLabels => inLabels.join('/'));
-      }
-    }
-  }
   setInputValue(value: string): void {
     this.inputValue = value;
   }
