@@ -72,7 +72,7 @@ const defaultDisplayRender = (labels: Array<string | undefined>): string => labe
             [label]="nzDisplayWith($any(node))"
             (delete)="cascaderService.removeSelectedOption(node, 0, true)"
             [contentTemplateOutlet]="nzLabelRender"
-            [contentTemplateOutletContext]="labelRenderContext[i]"
+            [contentTemplateOutletContext]="$any(labelRenderContext)[i]"
           ></nz-select-item>
 
           <nz-select-item
@@ -283,7 +283,7 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
   labelRenderText?: string;
   /** For multiple output */
   labelRenderTextArray?: string[];
-  labelRenderContext: NzCascaderLabelRenderContext | NzCascaderLabelRenderContext[] | NzSafeAny = {};
+  labelRenderContext: NzCascaderLabelRenderContext | NzCascaderLabelRenderContext[] = {};
   onChange = Function.prototype;
   onTouched = Function.prototype;
   positions: ConnectionPositionPair[] = [...DEFAULT_CASCADER_POSITIONS];
@@ -842,9 +842,9 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
     ) {
       this.labelRenderContext = [];
       this.cascaderService.selectedOptions.forEach(options => {
-        this.labelRenderContext.push({
+        (this.labelRenderContext as NzCascaderLabelRenderContext[]).push({
           labels: options.map(o => this.cascaderService.getOptionLabel(o)),
-          selectedOPtions: options
+          selectedOptions: options
         });
       });
     }

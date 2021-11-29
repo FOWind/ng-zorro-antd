@@ -55,6 +55,6 @@ export interface NzCascaderComponentAsSource {
 }
 
 export interface NzCascaderLabelRenderContext {
-  label?: string[];
+  labels?: string[];
   selectedOptions?: NzCascaderOption[];
 }
