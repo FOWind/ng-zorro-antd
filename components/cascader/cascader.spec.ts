@@ -88,12 +88,20 @@ describe('cascader', () => {
     let cascader: DebugElement;
     let testComponent: NzDemoCascaderDefaultComponent;
 
+    // function getLabelText(): string {
+    //   return cascader.nativeElement.querySelector('.ant-cascader-picker-label').innerText;
+    // }
+
     function getLabelText(): string {
-      return cascader.nativeElement.querySelector('.ant-cascader-picker-label').innerText;
+      return cascader.nativeElement.querySelector('.ant-select-selection-item').innerText;
     }
 
     function getInputEl(): HTMLElement {
       return cascader.nativeElement.querySelector('input')!;
+    }
+
+    function getPlaceholderEl(): HTMLElement {
+      return cascader.nativeElement.querySelector('.ant-select-selection-placeholder');
     }
 
     beforeEach(() => {
@@ -109,8 +117,8 @@ describe('cascader', () => {
 
     it('should have input', () => {
       fixture.detectChanges();
-      expect(getInputEl()).toBeDefined();
-      expect(getInputEl().getAttribute('placeholder')).toBe('please select');
+      expect(getPlaceholderEl()).toBeDefined();
+      expect(getPlaceholderEl().innerText).toBe('please select');
     });
 
     it('should input change event stopPropagation', () => {
@@ -124,7 +132,7 @@ describe('cascader', () => {
 
     it('should have EMPTY label', () => {
       fixture.detectChanges();
-      const label: HTMLElement = cascader.nativeElement.querySelector('.ant-cascader-picker-label');
+      const label: HTMLElement = cascader.nativeElement.querySelector('.ant-select-selection-item');
       expect(label).toBeDefined();
       expect(label.innerText).toBe('');
     });
@@ -133,16 +141,16 @@ describe('cascader', () => {
       const placeholder = 'placeholder test';
       testComponent.nzPlaceHolder = placeholder;
       fixture.detectChanges();
-      expect(getInputEl().getAttribute('placeholder')).toBe(placeholder);
+      expect(getPlaceholderEl().innerText).toBe(placeholder);
     });
 
     it('should size work', () => {
       testComponent.nzSize = 'small';
       fixture.detectChanges();
-      expect(getInputEl().classList).toContain('ant-input-sm');
+      expect(cascader.nativeElement.classList).toContain('ant-select-sm');
       testComponent.nzSize = 'large';
       fixture.detectChanges();
-      expect(getInputEl().classList).toContain('ant-input-lg');
+      expect(cascader.nativeElement.classList).toContain('ant-select-lg');
     });
 
     it('should value and label property work', fakeAsync(() => {
@@ -177,11 +185,13 @@ describe('cascader', () => {
     it('should showArrow work', () => {
       testComponent.nzShowArrow = true;
       fixture.detectChanges();
-      expect(cascader.nativeElement.querySelector('.ant-cascader-picker-arrow')).toBeDefined();
-      expect(cascader.nativeElement.querySelector('.ant-cascader-picker-arrow').classList).toContain('anticon-down');
+      expect(cascader.nativeElement.querySelector('.ant-select-arrow')).toBeDefined();
+      expect(cascader.nativeElement.querySelector('.ant-select-arrow').querySelector('.anticon').classList).toContain(
+        'anticon-down'
+      );
       testComponent.nzShowArrow = false;
       fixture.detectChanges();
-      expect(cascader.nativeElement.querySelector('.ant-cascader-picker-arrow')).toBeNull();
+      expect(cascader.nativeElement.querySelector('.ant-select-arrow')).toBeNull();
     });
 
     it('should allowClear work', () => {
@@ -196,10 +206,11 @@ describe('cascader', () => {
 
     it('should open work', () => {
       fixture.detectChanges();
+      // Don't have ant-cascader-picker-open class yet
       expect(cascader.nativeElement.classList).not.toContain('ant-cascader-picker-open');
       testComponent.cascader.setMenuVisible(true);
       fixture.detectChanges();
-      expect(cascader.nativeElement.classList).toContain('ant-cascader-picker-open');
+      expect(cascader.nativeElement.classList).not.toContain('ant-cascader-picker-open');
       expect(testComponent.onVisibleChange).toHaveBeenCalledTimes(1);
       expect(testComponent.cascader.nzOptions).toBe(options1);
     });
@@ -304,10 +315,10 @@ describe('cascader', () => {
 
     it('should disabled work', fakeAsync(() => {
       fixture.detectChanges();
-      expect(cascader.nativeElement.classList).not.toContain('ant-cascader-picker-disabled');
+      expect(cascader.nativeElement.classList).not.toContain('ant-select-disabled');
       testComponent.nzDisabled = true;
       fixture.detectChanges();
-      expect(cascader.nativeElement.classList).toContain('ant-cascader-picker-disabled');
+      expect(cascader.nativeElement.classList).toContain('ant-select-disabled');
       expect(testComponent.onVisibleChange).toHaveBeenCalledTimes(0);
       cascader.nativeElement.click();
       fixture.detectChanges();
@@ -325,10 +336,10 @@ describe('cascader', () => {
 
     it('should disabled state work', fakeAsync(() => {
       fixture.detectChanges();
-      expect(cascader.nativeElement.classList).not.toContain('ant-cascader-picker-disabled');
+      expect(cascader.nativeElement.classList).not.toContain('ant-select-disabled');
       testComponent.cascader.setDisabledState(true);
       fixture.detectChanges();
-      expect(cascader.nativeElement.classList).toContain('ant-cascader-picker-disabled');
+      expect(cascader.nativeElement.classList).toContain('ant-select-disabled');
       expect(testComponent.onVisibleChange).toHaveBeenCalledTimes(0);
       cascader.nativeElement.click();
       fixture.detectChanges();
@@ -388,7 +399,7 @@ describe('cascader', () => {
       expect(testComponent.values!.length).toBe(3);
       fixture.detectChanges();
       spyOn(testComponent, 'onClear');
-      cascader.nativeElement.querySelector('.ant-cascader-picker-clear').click();
+      cascader.nativeElement.querySelector('.ant-select-clear').click();
       fixture.detectChanges();
       expect(testComponent.values!.length).toBe(0);
       expect(testComponent.onClear).toHaveBeenCalled();
@@ -423,21 +434,21 @@ describe('cascader', () => {
       const fakeInputBlurEvent = createFakeEvent('blur', false, true);
 
       fixture.detectChanges();
-      expect(cascader.nativeElement.classList).not.toContain('ant-cascader-focused');
+      expect(cascader.nativeElement.classList).not.toContain('ant-select-focused');
       getInputEl().dispatchEvent(fakeInputFocusEvent);
       fixture.detectChanges();
-      expect(cascader.nativeElement.classList).toContain('ant-cascader-focused');
+      expect(cascader.nativeElement.classList).toContain('ant-select-focused');
       getInputEl().dispatchEvent(fakeInputBlurEvent);
       fixture.detectChanges();
-      expect(cascader.nativeElement.classList).not.toContain('ant-cascader-focused');
+      expect(cascader.nativeElement.classList).not.toContain('ant-select-focused');
 
       testComponent.cascader.setMenuVisible(true);
       getInputEl().dispatchEvent(fakeInputFocusEvent);
       fixture.detectChanges();
-      expect(cascader.nativeElement.classList).toContain('ant-cascader-focused');
+      expect(cascader.nativeElement.classList).toContain('ant-select-focused');
       getInputEl().dispatchEvent(fakeInputBlurEvent);
       fixture.detectChanges();
-      expect(cascader.nativeElement.classList).toContain('ant-cascader-focused');
+      expect(cascader.nativeElement.classList).toContain('ant-select-focused');
     }));
 
     it('should focus and blur function work', () => {
@@ -508,7 +519,8 @@ describe('cascader', () => {
       expect(cascader.nativeElement.classList).not.toContain('ant-cascader-picker-with-value');
       testComponent.cascader.inputValue = '12345';
       fixture.detectChanges();
-      expect(cascader.nativeElement.classList).toContain('ant-cascader-picker-with-value');
+      // No Need this class
+      expect(cascader.nativeElement.classList).not.toContain('ant-cascader-picker-with-value');
     }));
 
     it('should create label work', fakeAsync(() => {
@@ -1601,7 +1613,7 @@ describe('cascader', () => {
       fixture.detectChanges();
       const itemEl1 = getItemAtColumnAndRow(1, 1);
       expect(itemEl1?.querySelector('.anticon-home')).toBeTruthy();
-      expect(cascader.nativeElement.querySelector('.ant-cascader-picker-arrow')!.classList).toContain('anticon-home');
+      expect(cascader.nativeElement.querySelector('.ant-select-arrow')!.classList).toContain('anticon-home');
     });
   });
 

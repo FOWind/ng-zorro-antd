@@ -70,7 +70,7 @@ const defaultDisplayRender = (labels: Array<string | undefined>): string => labe
             [deletable]="true"
             [disabled]="nzDisabled"
             [label]="nzDisplayWith($any(node))"
-            (delete)="cascaderService.removeSelectedOption(node, 0, true)"
+            (delete)="cascaderService.removeSelectedOption($any(node)[node.length - 1], node.length - 1, true)"
             [contentTemplateOutlet]="nzLabelRender"
             [contentTemplateOutletContext]="$any(labelRenderContext)[i]"
           ></nz-select-item>
@@ -94,6 +94,7 @@ const defaultDisplayRender = (labels: Array<string | undefined>): string => labe
           [value]="inputValue"
           [mirrorSync]="nzMultiple"
           [disabled]="nzDisabled"
+          [autofocus]="nzAutoFocus"
           [focusTrigger]="menuVisible"
         ></nz-select-search>
 
@@ -112,7 +113,7 @@ const defaultDisplayRender = (labels: Array<string | undefined>): string => labe
           [contentTemplateOutletContext]="labelRenderContext"
         ></nz-select-item>
 
-        <nz-select-arrow *ngIf="!nzMultiple"></nz-select-arrow>
+        <nz-select-arrow *ngIf="!nzMultiple && nzShowArrow"></nz-select-arrow>
 
         <nz-select-clear
           *ngIf="nzAllowClear && !nzDisabled && cascaderService.selectedOptions.length"
@@ -203,8 +204,8 @@ const defaultDisplayRender = (labels: Array<string | undefined>): string => labe
     '[class.ant-select-show-search]': '!nzMultiple',
     '[class.ant-select-multiple]': 'nzMultiple',
     '[class.ant-select-allow-clear]': 'nzAllowClear',
-    '[class.ant-select-open]': 'nzOpen',
-    '[class.ant-select-focused]': 'nzOpen || focused',
+    '[class.ant-select-open]': 'menuVisible',
+    '[class.ant-select-focused]': 'menuVisible || isFocused',
     '[attr.tabIndex]': '"0"'
   }
 })

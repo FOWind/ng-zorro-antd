@@ -271,7 +271,7 @@ export class NzCascaderService implements OnDestroy {
   removeSelectedOption(option: NzCascaderOption, index: number, multipleMode: boolean = false): void {
     if (this.isMultipleSelections(this.selectedOptions, multipleMode)) {
       this.selectedOptions = this.selectedOptions.filter(
-        innerOptions => !innerOptions.some(o => JSON.stringify(o.value) === JSON.stringify(option.value))
+        inOptions => !inOptions.some(o => JSON.stringify(o.value) === JSON.stringify(option.value))
       );
       this.removeCheckedOptions(option);
       this.conduct(option, index);
@@ -420,6 +420,7 @@ export class NzCascaderService implements OnDestroy {
    * @param columnIndex Position
    */
   private setColumnData(options: NzCascaderOption[], columnIndex: number, parent: NzCascaderOption): void {
+    this.setColumnsFullData(options, columnIndex, parent);
     const existingOptions = this.columns[columnIndex];
     if (!arraysEqual(existingOptions, options)) {
       options.forEach(o => (o.parent = parent));
@@ -634,7 +635,6 @@ export class NzCascaderService implements OnDestroy {
    */
   conductDown(option: NzCascaderOption, value: boolean, index: number = 0): void {
     if (isParentOption(option)) {
-      this.setColumnsFullData(option?.children!, index, option);
       this.setColumnData(option?.children!, index, option);
     }
     if (!option.disabled && value) {
