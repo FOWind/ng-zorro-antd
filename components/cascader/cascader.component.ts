@@ -113,7 +113,7 @@ const defaultDisplayRender = (labels: Array<string | undefined>): string => labe
           [contentTemplateOutletContext]="labelRenderContext"
         ></nz-select-item>
 
-        <nz-select-arrow *ngIf="!nzMultiple && nzShowArrow"></nz-select-arrow>
+        <nz-select-arrow [suffixIcon]="nzSuffixIcon" *ngIf="!nzMultiple && nzShowArrow"></nz-select-arrow>
 
         <nz-select-clear
           *ngIf="nzAllowClear && !nzDisabled && cascaderService.selectedOptions.length"

@@ -594,7 +594,7 @@ describe('cascader', () => {
       expect(values2[0]).toBe('zhejiang');
       expect(values2[1]).toBe('hangzhou');
       expect(values2[2]).toBe('xihu');
-      expect(control.labelRenderText).toBe('Zhejiang / Hangzhou / West Lake');
+      expect(getLabelText()).toBe('Zhejiang / Hangzhou / West Lake');
 
       testComponent.nzOptions = []; // empty collection
       fixture.detectChanges();
@@ -605,7 +605,7 @@ describe('cascader', () => {
       expect(values3[0]).toBe('zhejiang');
       expect(values3[1]).toBe('hangzhou');
       expect(values3[2]).toBe('xihu');
-      expect(control.labelRenderText).toBe('zhejiang / hangzhou / xihu');
+      expect(getLabelText()).toBe('zhejiang / hangzhou / xihu');
 
       control.writeValue([
         { value: 'zhejiang', label: 'ZJ' },
@@ -618,7 +618,7 @@ describe('cascader', () => {
       expect(values4[0]).toBe('zhejiang');
       expect(values4[1]).toBe('hangzhou');
       expect(values4[2]).toBe('xihu');
-      expect(control.labelRenderText).toBe('ZJ / HZ / XH');
+      expect(getLabelText()).toBe('ZJ / HZ / XH');
     }));
 
     it('should write value work on setting `nzOptions` asyn', fakeAsync(() => {
@@ -645,12 +645,12 @@ describe('cascader', () => {
       fixture.detectChanges();
       expect(control.getSubmitValue().length).toBe(1);
       expect(control.getSubmitValue()[0]).toBe('zhejiang');
-      expect(control.labelRenderText).toBe('zhejiang');
+      expect(getLabelText()).toBe('zhejiang');
       testComponent.nzOptions = options1; // update the nzOptions like asyn
       fixture.detectChanges();
       expect(control.getSubmitValue().length).toBe(1);
       expect(control.getSubmitValue()[0]).toBe('zhejiang');
-      expect(control.labelRenderText).toBe('Zhejiang');
+      expect(getLabelText()).toBe('Zhejiang');
     }));
 
     it('should write value work on setting `nzOptions` async (match)', fakeAsync(() => {
@@ -661,14 +661,14 @@ describe('cascader', () => {
       flush(); // force value to be write
       fixture.detectChanges();
       expect(control.getSubmitValue().length).toBe(3);
-      expect(control.labelRenderText).toBe('zhejiang / hangzhou / xihu');
+      expect(getLabelText()).toBe('zhejiang / hangzhou / xihu');
       testComponent.nzOptions = options1; // update the nzOptions like asyn
       fixture.detectChanges();
       const values = control.getSubmitValue();
       expect(values![0]).toBe('zhejiang');
       expect(values![1]).toBe('hangzhou');
       expect(values![2]).toBe('xihu');
-      expect(control.labelRenderText).toBe('Zhejiang / Hangzhou / West Lake');
+      expect(getLabelText()).toBe('Zhejiang / Hangzhou / West Lake');
     }));
 
     it('should write value work on setting `nzOptions` async (not match)', fakeAsync(() => {
@@ -679,14 +679,14 @@ describe('cascader', () => {
       flush(); // force value to be write
       fixture.detectChanges();
       expect(control.getSubmitValue().length).toBe(3);
-      expect(control.labelRenderText).toBe('zhejiang2 / hangzhou2 / xihu2');
+      expect(getLabelText()).toBe('zhejiang2 / hangzhou2 / xihu2');
       testComponent.nzOptions = options1; // update the nzOptions like asyn
       fixture.detectChanges(); // but still the values is not match
       const values = control.getSubmitValue();
       expect(values![0]).toBe('zhejiang2');
       expect(values![1]).toBe('hangzhou2');
       expect(values![2]).toBe('xihu2');
-      expect(control.labelRenderText).toBe('zhejiang2 / hangzhou2 / xihu2');
+      expect(getLabelText()).toBe('zhejiang2 / hangzhou2 / xihu2');
     }));
 
     it('should click option to expand', () => {
@@ -1613,7 +1613,9 @@ describe('cascader', () => {
       fixture.detectChanges();
       const itemEl1 = getItemAtColumnAndRow(1, 1);
       expect(itemEl1?.querySelector('.anticon-home')).toBeTruthy();
-      expect(cascader.nativeElement.querySelector('.ant-select-arrow')!.classList).toContain('anticon-home');
+      expect(cascader.nativeElement.querySelector('.ant-select-arrow').querySelector('.anticon')!.classList).toContain(
+        'anticon-home'
+      );
     });
   });
 
@@ -1747,7 +1749,7 @@ describe('cascader', () => {
       fixture.detectChanges();
       flush();
       fixture.detectChanges();
-      cascader.nativeElement.querySelector('.ant-cascader-picker-clear').click();
+      cascader.nativeElement.querySelector('.ant-select-clear').click();
       testComponent.cascader.setMenuVisible(true);
       fixture.detectChanges();
       expect(testComponent.values!.length).toBe(0);
@@ -1767,11 +1769,11 @@ describe('cascader', () => {
 
     it('should className correct', () => {
       fixture.detectChanges();
-      expect(cascader.nativeElement.className).toContain('ant-cascader-picker-rtl');
+      expect(cascader.nativeElement.className).toContain('ant-select-rtl');
 
       fixture.componentInstance.direction = 'ltr';
       fixture.detectChanges();
-      expect(cascader.nativeElement.className).not.toContain('ant-cascader-picker-rtl');
+      expect(cascader.nativeElement.className).not.toContain('ant-select-rtl');
     });
 
     it('should menu class work', fakeAsync(() => {

@@ -228,13 +228,15 @@ export class NzCascaderService implements OnDestroy {
       });
       this.selectedOptions = [...this.activatedOptions];
       this.activatedOptions = [];
+      this.prepareEmitValue(multiple);
+      this.$redraw.next();
+      this.$optionSelected.next({ option, index });
     } else if (option.isLeaf || this.cascaderComponent.nzChangeOnSelect || shouldPerformSelection(option, index)) {
       this.selectedOptions = [...this.activatedOptions];
+      this.prepareEmitValue(multiple);
+      this.$redraw.next();
+      this.$optionSelected.next({ option, index });
     }
-
-    this.prepareEmitValue(multiple);
-    this.$redraw.next();
-    this.$optionSelected.next({ option, index });
   }
 
   setOptionDeactivatedSinceColumn(column: number): void {
