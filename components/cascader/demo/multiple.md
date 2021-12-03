@@ -7,8 +7,8 @@ title:
 
 ## zh-CN
 
-多选的级联，例子中通过 `nzMaxTagCount` 限制最多显示3个选项。
+多选的级联，例子中通过 `nzMaxTagCount` 限制最多显示2个选项。
 
 ## en-US
 
-Multiple selection usage, max 3 option will display at the same time by `nzMaxTagCount`.
+Multiple selection usage, max 2 option will display at the same time by `nzMaxTagCount`.

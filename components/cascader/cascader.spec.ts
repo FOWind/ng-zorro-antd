@@ -121,15 +121,6 @@ describe('cascader', () => {
       expect(getPlaceholderEl().innerText).toBe('please select');
     });
 
-    it('should input change event stopPropagation', () => {
-      fixture.detectChanges();
-      const fakeInputChangeEvent = createFakeEvent('change', true, true);
-      spyOn(fakeInputChangeEvent, 'stopPropagation');
-      getInputEl().dispatchEvent(fakeInputChangeEvent);
-      fixture.detectChanges();
-      expect(fakeInputChangeEvent.stopPropagation).toHaveBeenCalled();
-    });
-
     it('should have EMPTY label', () => {
       fixture.detectChanges();
       const label: HTMLElement = cascader.nativeElement.querySelector('.ant-select-selection-item');
@@ -330,6 +321,7 @@ describe('cascader', () => {
       fixture.detectChanges();
       tick();
       fixture.detectChanges();
+      flush();
       expect(testComponent.cascader.menuVisible).toBe(false);
       expect(testComponent.onVisibleChange).toHaveBeenCalledTimes(0);
     }));
@@ -344,6 +336,7 @@ describe('cascader', () => {
       cascader.nativeElement.click();
       fixture.detectChanges();
       tick();
+      flush();
       fixture.detectChanges();
       expect(testComponent.cascader.menuVisible).toBe(false);
       expect(testComponent.onVisibleChange).toHaveBeenCalledTimes(0);
@@ -430,7 +423,7 @@ describe('cascader', () => {
     });
 
     it('should input focus and blur work', fakeAsync(() => {
-      const fakeInputFocusEvent = createFakeEvent('focus', false, true);
+      const fakeInputFocusEvent = createFakeEvent('focus', true, true);
       const fakeInputBlurEvent = createFakeEvent('blur', false, true);
 
       fixture.detectChanges();
@@ -440,14 +433,17 @@ describe('cascader', () => {
       expect(cascader.nativeElement.classList).toContain('ant-select-focused');
       getInputEl().dispatchEvent(fakeInputBlurEvent);
       fixture.detectChanges();
+      flush();
       expect(cascader.nativeElement.classList).not.toContain('ant-select-focused');
 
       testComponent.cascader.setMenuVisible(true);
       getInputEl().dispatchEvent(fakeInputFocusEvent);
       fixture.detectChanges();
+      flush();
       expect(cascader.nativeElement.classList).toContain('ant-select-focused');
       getInputEl().dispatchEvent(fakeInputBlurEvent);
       fixture.detectChanges();
+      flush();
       expect(cascader.nativeElement.classList).toContain('ant-select-focused');
     }));
 
@@ -845,7 +841,9 @@ describe('cascader', () => {
       dispatchKeyboardEvent(cascader.nativeElement, 'keydown', DOWN_ARROW);
       fixture.detectChanges();
       tick(200);
+      flush();
       fixture.detectChanges();
+      flush();
       expect(testComponent.cascader.menuVisible).toBe(true);
     }));
 
@@ -883,17 +881,20 @@ describe('cascader', () => {
       fixture.detectChanges();
       testComponent.cascader.setMenuVisible(true);
       fixture.detectChanges();
+      flush();
       const itemEl1 = overlayContainerElement.querySelector(
         '.ant-cascader-menu:nth-child(1) .ant-cascader-menu-item:last-child'
       ) as HTMLElement; // The last of the fisrt column
       expect(itemEl1.classList).not.toContain('ant-cascader-menu-item-active');
       dispatchKeyboardEvent(cascader.nativeElement, 'keydown', UP_ARROW);
       fixture.detectChanges();
+      flush();
       expect(itemEl1.classList).toContain('ant-cascader-menu-item-active');
       const itemEl2 = getItemAtColumnAndRow(1, 1)!;
       expect(itemEl2.classList).not.toContain('ant-cascader-menu-item-active');
       dispatchKeyboardEvent(cascader.nativeElement, 'keydown', UP_ARROW);
       fixture.detectChanges();
+      flush();
       expect(itemEl2.classList).toContain('ant-cascader-menu-item-active');
       expect(itemEl1.classList).not.toContain('ant-cascader-menu-item-active');
     }));
@@ -906,6 +907,7 @@ describe('cascader', () => {
       expect(itemEl1.classList).not.toContain('ant-cascader-menu-item-active');
       dispatchKeyboardEvent(cascader.nativeElement, 'keydown', DOWN_ARROW);
       fixture.detectChanges();
+      flush();
       expect(itemEl1.classList).toContain('ant-cascader-menu-item-active');
     }));
 
@@ -913,16 +915,20 @@ describe('cascader', () => {
       fixture.detectChanges();
       testComponent.cascader.setMenuVisible(true);
       fixture.detectChanges();
+      flush();
       dispatchKeyboardEvent(cascader.nativeElement, 'keydown', DOWN_ARROW);
       fixture.detectChanges();
+      flush();
       dispatchKeyboardEvent(cascader.nativeElement, 'keydown', RIGHT_ARROW);
       fixture.detectChanges();
+      flush();
       let itemEl1 = getItemAtColumnAndRow(1, 1)!;
       expect(itemEl1.classList).toContain('ant-cascader-menu-item-active');
       let itemEl2 = getItemAtColumnAndRow(2, 1)!;
       expect(itemEl2.classList).toContain('ant-cascader-menu-item-active');
       dispatchKeyboardEvent(cascader.nativeElement, 'keydown', RIGHT_ARROW);
       fixture.detectChanges();
+      flush();
 
       itemEl1 = getItemAtColumnAndRow(1, 1)!;
       expect(itemEl1.classList).toContain('ant-cascader-menu-item-active');
@@ -950,16 +956,19 @@ describe('cascader', () => {
       expect(itemEl3.classList).toContain('ant-cascader-menu-item-active');
       dispatchKeyboardEvent(cascader.nativeElement, 'keydown', LEFT_ARROW);
       fixture.detectChanges();
+      flush();
       expect(itemEl1.classList).toContain('ant-cascader-menu-item-active');
       expect(itemEl2.classList).toContain('ant-cascader-menu-item-active');
       expect(itemEl3.classList).not.toContain('ant-cascader-menu-item-active');
       dispatchKeyboardEvent(cascader.nativeElement, 'keydown', LEFT_ARROW);
       fixture.detectChanges();
+      flush();
       expect(itemEl1.classList).toContain('ant-cascader-menu-item-active');
       expect(itemEl2.classList).not.toContain('ant-cascader-menu-item-active');
       expect(itemEl3.classList).not.toContain('ant-cascader-menu-item-active');
       dispatchKeyboardEvent(cascader.nativeElement, 'keydown', LEFT_ARROW);
       fixture.detectChanges();
+      flush();
       expect(itemEl1.classList).not.toContain('ant-cascader-menu-item-active');
       expect(itemEl2.classList).not.toContain('ant-cascader-menu-item-active');
       expect(itemEl3.classList).not.toContain('ant-cascader-menu-item-active');
@@ -1013,11 +1022,13 @@ describe('cascader', () => {
       expect(optionEl2.classList).not.toContain('ant-cascader-menu-item-active');
       dispatchKeyboardEvent(cascader.nativeElement, 'keydown', DOWN_ARROW); // active 1
       fixture.detectChanges();
+      flush();
       expect(optionEl1.classList).toContain('ant-cascader-menu-item-active');
       expect(optionEl2.classList).not.toContain('ant-cascader-menu-item-active');
 
       dispatchKeyboardEvent(cascader.nativeElement, 'keydown', DOWN_ARROW);
       fixture.detectChanges(); // should NOT active the disabled option2
+      flush();
       expect(optionEl1.classList).toContain('ant-cascader-menu-item-active');
       expect(optionEl2.classList).not.toContain('ant-cascader-menu-item-active');
 
@@ -1032,6 +1043,7 @@ describe('cascader', () => {
 
       dispatchKeyboardEvent(cascader.nativeElement, 'keydown', RIGHT_ARROW); // active 2
       fixture.detectChanges();
+      flush();
       expect(optionEl11.classList).not.toContain('ant-cascader-menu-item-active');
       expect(optionEl12.classList).toContain('ant-cascader-menu-item-active');
       expect(optionEl13.classList).not.toContain('ant-cascader-menu-item-active');
@@ -1039,6 +1051,7 @@ describe('cascader', () => {
 
       dispatchKeyboardEvent(cascader.nativeElement, 'keydown', DOWN_ARROW);
       fixture.detectChanges();
+      flush();
       expect(optionEl11.classList).not.toContain('ant-cascader-menu-item-active');
       expect(optionEl12.classList).not.toContain('ant-cascader-menu-item-active');
       expect(optionEl13.classList).not.toContain('ant-cascader-menu-item-active');
@@ -1046,6 +1059,7 @@ describe('cascader', () => {
 
       dispatchKeyboardEvent(cascader.nativeElement, 'keydown', UP_ARROW);
       fixture.detectChanges();
+      flush();
       expect(optionEl11.classList).not.toContain('ant-cascader-menu-item-active');
       expect(optionEl12.classList).toContain('ant-cascader-menu-item-active');
       expect(optionEl13.classList).not.toContain('ant-cascader-menu-item-active');
@@ -1068,6 +1082,7 @@ describe('cascader', () => {
         expect(testComponent.cascader.menuVisible).toBe(false);
         dispatchKeyboardEvent(cascader.nativeElement, 'keydown', key);
         fixture.detectChanges();
+        flush();
         expect(testComponent.cascader.menuVisible).toBe(false);
       });
     }));

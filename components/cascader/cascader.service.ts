@@ -253,9 +253,7 @@ export class NzCascaderService implements OnDestroy {
    */
   hasOptionSelected(value: NzSafeAny, multipleMode: boolean = false): boolean {
     if (this.isMultipleSelections(this.selectedOptions, multipleMode)) {
-      return this.selectedOptions.some(inOptions =>
-        inOptions.some(o => JSON.stringify(o.value) === JSON.stringify(value))
-      );
+      return this.checkedOptionsKeySet.has(value);
     }
 
     if (this.isSingleSelection(this.selectedOptions, multipleMode)) {

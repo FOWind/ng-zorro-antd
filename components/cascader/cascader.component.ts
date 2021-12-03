@@ -3,6 +3,7 @@
  * found in the LICENSE file at https://github.com/NG-ZORRO/ng-zorro-antd/blob/master/LICENSE
  */
 
+import { FocusMonitor } from '@angular/cdk/a11y';
 import { Direction, Directionality } from '@angular/cdk/bidi';
 import { BACKSPACE, DOWN_ARROW, ENTER, ESCAPE, LEFT_ARROW, RIGHT_ARROW, UP_ARROW } from '@angular/cdk/keycodes';
 import { CdkConnectedOverlay, ConnectionPositionPair } from '@angular/cdk/overlay';
@@ -16,6 +17,7 @@ import {
   Host,
   HostListener,
   Input,
+  NgZone,
   OnDestroy,
   OnInit,
   Optional,
@@ -28,7 +30,7 @@ import {
   ViewEncapsulation
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { Subject } from 'rxjs';
+import { fromEvent, Subject } from 'rxjs';
 import { startWith, takeUntil } from 'rxjs/operators';
 
 import { slideMotion } from 'ng-zorro-antd/core/animation';
@@ -38,6 +40,7 @@ import { DEFAULT_CASCADER_POSITIONS } from 'ng-zorro-antd/core/overlay';
 import { BooleanInput, NgClassType, NgStyleInterface, NzSafeAny } from 'ng-zorro-antd/core/types';
 import { InputBoolean, toArray } from 'ng-zorro-antd/core/util';
 import { NzCascaderI18nInterface, NzI18nService } from 'ng-zorro-antd/i18n';
+import { NzSelectSearchComponent } from 'ng-zorro-antd/select';
 
 import { NzCascaderLabelRenderContext } from '.';
 import { NzCascaderOptionComponent } from './cascader-li.component';
@@ -206,7 +209,9 @@ const defaultDisplayRender = (labels: Array<string | undefined>): string => labe
     '[class.ant-select-allow-clear]': 'nzAllowClear',
     '[class.ant-select-open]': 'menuVisible',
     '[class.ant-select-focused]': 'menuVisible || isFocused',
-    '[attr.tabIndex]': '"0"'
+    '[attr.tabIndex]': '"0"',
+    '(focus)': 'handleInputFocus()',
+    '(blur)': 'handleInputBlur()'
   }
 })
 export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit, OnDestroy, ControlValueAccessor {
@@ -218,7 +223,7 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
   static ngAcceptInputType_nzChangeOnSelect: BooleanInput;
   static ngAcceptInputType_nzDisabled: BooleanInput;
 
-  @ViewChild('input', { static: false }) input!: ElementRef;
+  @ViewChild(NzSelectSearchComponent, { static: false }) input!: NzSelectSearchComponent;
   @ViewChild('menu', { static: false }) menu!: ElementRef;
   @ViewChild(CdkConnectedOverlay, { static: false }) overlay!: CdkConnectedOverlay;
   @ViewChildren(NzCascaderOptionComponent) cascaderItems!: QueryList<NzCascaderOptionComponent>;
@@ -356,7 +361,9 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
     public nzConfigService: NzConfigService,
     private cdr: ChangeDetectorRef,
     private i18nService: NzI18nService,
-    elementRef: ElementRef,
+    private focusMonitor: FocusMonitor,
+    private elementRef: ElementRef,
+    private ngZone: NgZone,
     renderer: Renderer2,
     @Optional() private directionality: Directionality,
     @Host() @Optional() public noAnimation?: NzNoAnimationDirective
@@ -425,6 +432,33 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
       this.dir = this.directionality.value;
       srv.$redraw.next();
     });
+
+    this.ngZone.runOutsideAngular(() => {
+      fromEvent<MouseEvent>(this.elementRef.nativeElement, 'click')
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(event => {
+          // `HTMLElement.focus()` is a native DOM API which doesn't require Angular to run change detection.
+          if (event.target !== this.input.inputElement.nativeElement) {
+            this.input.focus();
+          }
+        });
+    });
+
+    this.focusMonitor
+      .monitor(this.elementRef, true)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(focusOrigin => {
+        if (!focusOrigin) {
+          this.isFocused = false;
+          this.cdr.markForCheck();
+          Promise.resolve().then(() => {
+            this.onTouched();
+          });
+        } else {
+          this.isFocused = true;
+          this.cdr.markForCheck();
+        }
+      });
   }
 
   ngOnDestroy(): void {
@@ -432,6 +466,7 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
     this.destroy$.complete();
     this.clearDelayMenuTimer();
     this.clearDelaySelectTimer();
+    this.focusMonitor.stopMonitoring(this.elementRef);
   }
 
   registerOnChange(fn: () => {}): void {
@@ -513,15 +548,17 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
 
   focus(): void {
     if (!this.isFocused) {
-      (this.input ? this.input.nativeElement : this.el).focus();
+      (this.input ? this.input : this.el).focus();
       this.isFocused = true;
+      this.cdr.markForCheck();
     }
   }
 
   blur(): void {
     if (this.isFocused) {
-      (this.input ? this.input.nativeElement : this.el).blur();
+      (this.input ? this.input : this.el).blur();
       this.isFocused = false;
+      this.cdr.markForCheck();
     }
   }
 
@@ -803,7 +840,7 @@ export class NzCascaderComponent implements NzCascaderComponentAsSource, OnInit,
 
     if (this.input) {
       this.dropdownWidthStyle =
-        this.inSearchingMode || this.shouldShowEmpty ? `${this.input.nativeElement.offsetWidth}px` : '';
+        this.inSearchingMode || this.shouldShowEmpty ? `${this.input.inputElement.nativeElement.offsetWidth}px` : '';
     }
   }
 

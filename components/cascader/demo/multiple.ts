@@ -64,6 +64,7 @@ const options = [
       [(ngModel)]="values"
       [nzMultiple]="true"
       [nzShowSearch]="true"
+      [nzMaxTagCount]="2"
       (ngModelChange)="onChanges($event)"
       nzExpandTrigger="hover"
       style="width: 100%;"
