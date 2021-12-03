@@ -1767,6 +1767,7 @@ describe('cascader', () => {
       cascader.nativeElement.querySelector('.ant-select-clear').click();
       testComponent.cascader.setMenuVisible(true);
       fixture.detectChanges();
+      flush();
       expect(testComponent.values!.length).toBe(0);
     }));
   });
@@ -1818,6 +1819,41 @@ describe('cascader', () => {
       const itemEl21 = getItemAtColumnAndRow(2, 1)!;
       expect(itemEl21.querySelector('.anticon')?.classList).toContain('anticon-left');
     }));
+  });
+
+  describe('multiple', () => {
+    let fixture: ComponentFixture<NzDemoCascaderMultipleComponent>;
+    let cascader: DebugElement;
+    // @ts-ignore
+    let testComponent: NzDemoCascaderMultipleComponent;
+
+    // function getLabelText(): string {
+    //   return cascader.nativeElement.querySelector('.ant-cascader-picker-label').innerText;
+    // }
+    // @ts-ignore
+    function getLabelText(): string {
+      return cascader.nativeElement.querySelector('.ant-select-selection-item').innerText;
+    }
+    // @ts-ignore
+    function getInputEl(): HTMLElement {
+      return cascader.nativeElement.querySelector('input')!;
+    }
+    // @ts-ignore
+    function getPlaceholderEl(): HTMLElement {
+      return cascader.nativeElement.querySelector('.ant-select-selection-placeholder');
+    }
+
+    beforeEach(() => {
+      fixture = TestBed.createComponent(NzDemoCascaderMultipleComponent);
+      testComponent = fixture.debugElement.componentInstance;
+      cascader = fixture.debugElement.query(By.directive(NzCascaderComponent));
+    });
+    // TODO: Multiple test case
+    it('should maxTagCount work', fakeAsync(() => {}));
+    it('should remove item work', fakeAsync(() => {}));
+    it('should check parent and conduct down', fakeAsync(() => {}));
+    it('should check children and conduct up', fakeAsync(() => {}));
+    it('should check half check item and conduct', fakeAsync(() => {}));
   });
 });
 
@@ -2203,4 +2239,86 @@ export class NzDemoCascaderRtlComponent {
   public nzOptions: any[] | null = options1;
   @ViewChild(Dir) dir!: Dir;
   direction = 'rtl';
+}
+const multiOptions = [
+  {
+    value: 'zhejiang',
+    label: 'Zhejiang',
+    children: [
+      {
+        value: 'hangzhou',
+        label: 'Hangzhou',
+        children: [
+          {
+            value: 'xihu',
+            label: 'West Lake',
+            children: [
+              {
+                value: 'duanqiao',
+                label: 'Duan Bridge',
+                isLeaf: true
+              }
+            ]
+          },
+          {
+            value: 'lingyinsi',
+            label: 'Lingyin Temple',
+            isLeaf: true
+          }
+        ]
+      },
+      {
+        value: 'ningbo',
+        label: 'Ningbo',
+        isLeaf: true,
+        disabled: true
+      }
+    ]
+  },
+  {
+    value: 'jiangsu',
+    label: 'Jiangsu',
+    children: [
+      {
+        value: 'nanjing',
+        label: 'Nanjing',
+        children: [
+          {
+            value: 'zhonghuamen',
+            label: 'Zhong Hua Men',
+            isLeaf: true
+          }
+        ]
+      }
+    ]
+  }
+];
+
+@Component({
+  selector: 'nz-demo-cascader-multiple',
+  template: `
+    <nz-cascader
+      [nzOptions]="nzOptions"
+      [(ngModel)]="values"
+      [nzMultiple]="true"
+      [nzShowSearch]="true"
+      [nzMaxTagCount]="2"
+      (ngModelChange)="onChanges($event)"
+      nzExpandTrigger="hover"
+      style="width: 100%;"
+    ></nz-cascader>
+  `,
+  styles: [
+    `
+      .change-options {
+        display: inline-block;
+        font-size: 12px;
+        margin-top: 8px;
+      }
+    `
+  ]
+})
+export class NzDemoCascaderMultipleComponent {
+  nzOptions: NzCascaderOption[] | null = multiOptions;
+  values: string[] | string[][] | null = null;
 }
